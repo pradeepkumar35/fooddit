@@ -1,0 +1,18 @@
+# Local development profile: in-memory H2 database so no PostgreSQL install is needed.
+spring:
+  datasource:
+    url: jdbc:h2:mem:fooddit;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+  # Schema comes from Flyway migrations (db/migration) which run on the fresh
+  # in-memory DB at every boot -- same fresh-slate behaviour as the old
+  # create-drop, but with versioned, production-identical DDL.
+
+fooddit:
+  jwt:
+    # DEV-ONLY fallback so signup/login work locally without env vars.
+    # Production reads JWT_SECRET from the environment (see application.yml / prod profile).
+    secret: dev-secret-key-fooddit-change-me-1234567890abcdef

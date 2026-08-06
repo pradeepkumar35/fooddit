@@ -1,0 +1,17 @@
+# Production profile: PostgreSQL. All values come from the environment.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    # Schema is fully managed by Flyway migrations (db/migration). Hibernate
+    # never auto-DDLs; schema changes ship as versioned migrations.
+    hibernate:
+      ddl-auto: none
+  flyway:
+    # On first deploy Flyway migrates the empty Neon DB; afterwards it applies
+    # only new versioned migrations. Disable if you need to bootstrap against a
+    # pre-existing schema first (then flip on once Flyway's baseline is set).
+    enabled: true

@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: fooddit-backend
+
+  # Auto-load backend/.env (gitignored, holds the Neon DB_URL/DB_USERNAME/
+  # DB_PASSWORD/JWT_SECRET). Relative to the working directory, so IntelliJ is
+  # happy whether the run working dir is the backend module (file:.env) or the
+  # repo root (file:backend/.env); `mvn spring-boot:run` from backend/ uses the
+  # first. `optional:` keeps the app bootable (H2 dev) on a fresh clone where
+  # the file doesn't exist. `[.properties]` forces the .env to parse as a
+  # properties file (extensionless).
+  config:
+    import: optional:file:.env[.properties],optional:file:backend/.env[.properties]
+
+  # Plain `Run` in IntelliJ (and `mvn spring-boot:run` from backend/) connects
+  # to Neon out of the box: the default profile is "prod", which reads
+  # DB_URL/DB_USERNAME/DB_PASSWORD from backend/.env (loaded above), so no
+  # env vars need to be entered in the run configuration.
+  # Use SPRING_PROFILES_ACTIVE=dev (or the H2 "dev" profile) for a local
+  # demo with seed data and only 3 cities.
+  profiles:
+    default: prod
+
+  jpa:
+    open-in-view: false
+    # Schema is owned by Flyway migrations (db/migration). Hibernate never
+    # auto-creates or alters tables -- no silent DDL on top of real data.
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: false
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: ${PORT:8080}
+
+fooddit:
+  jwt:
+    # JWT_SECRET must be set in production (min 32 bytes for HS256). The dev
+    # profile provides a local-only fallback. Never hardcode a real secret.
+    secret: ${JWT_SECRET:}
+    expiration-ms: ${JWT_EXPIRATION_MS:604800000}
+  cors:
+    # Comma-separated list of allowed origins (e.g. the deployed Vercel frontend).
+    # Vite picks defaults starting at 5173 and bumps upward if that port is busy,
+    # so include each common dev port for both localhost and 127.0.0.1.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}

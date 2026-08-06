@@ -1,0 +1,28 @@
+The Reddit-style layout and structure are working well. The problem now is the UI feels static/lifeless even though the layout is correct. This is almost always a symptom of: no transitions on state changes, no hover/active feedback, flat uniform shadows (or none), and nothing animating on load or interaction. Fix this without touching layout structure, the color palette, or any functionality — this is a pure interaction/motion polish pass.
+
+Diagnosis to run first
+
+
+Before changing anything, list out every interactive element in the app (vote buttons, collapse toggles, save button, comment reply form, tabs/sort dropdown, cards on hover, nav links) and for each one, tell me: does it currently have any transition, hover state, or feedback animation? This audit should drive what you fix — don't skip straight to changes.
+
+
+Areas to add motion & feedback
+Vote buttons: on click, the arrow should have a quick scale/bounce (press-down then settle, ~150–200ms), and the score number should animate between values rather than snapping instantly (a brief count-up/down or a fade+slide swap). The active (voted) state's color transition should ease in, not hard-cut.
+Cards (restaurant cards, review cards, comments): add a subtle hover state — slight lift (translateY(-2px) or shadow growth), transition over ~150ms, ease-out. Nothing dramatic; Reddit-style density means restrained motion, not bouncy cards.
+Comment collapse/expand: animate the height transition when a thread collapses (don't just toggle display: none — animate max-height or use a proper height transition/library so replies visibly fold up/down). Rotate the [-]/[+] or chevron icon smoothly on toggle.
+Reply/comment box: when a "Reply" button is clicked and the inline form appears, it should slide/fade in rather than pop into existence. Same on submit — the new comment should fade+slide into the thread, not just instantly appear in the list.
+Save/bookmark button: a distinct little "pop" animation on save (icon scale bounce, maybe a brief color flash) — this is a moment users should feel good about, worth a slightly more expressive animation than the rest of the UI.
+Sort tabs / dropdown: animate the active-tab indicator sliding to the new position (like an underline or pill that moves) rather than just re-coloring text instantly.
+Page/route transitions: at minimum, fade the main content in on route change instead of a hard cut. Skeleton loaders (not spinners) for restaurant cards and comment threads while data is fetching — shimmer effect, matching the shape of the real content.
+Buttons in general (submit review, login, signup): active/pressed state (slight scale-down on :active), and a loading state on submit (spinner or disabled+dimmed with a subtle pulse) instead of the button just going unresponsive while the request is in flight.
+Toasts/feedback for actions (review posted, comment posted, vote registered, saved): if these don't exist yet, add small toast notifications that slide in from a corner and auto-dismiss, so actions feel acknowledged instead of silently succeeding.
+Constraints
+Keep every transition fast — 120–250ms for most UI feedback, nothing longer than ~300ms except the skeleton shimmer loop. Reddit's own UI is snappy; slow "fancy" animations will feel like the opposite of what we want.
+Use ease-out for elements entering/appearing, ease-in for elements leaving/disappearing, standard ease/ease-in-out for hover states. Don't use bouncy/elastic easing except for the save-button pop (that one can have a touch of spring).
+Respect prefers-reduced-motion — wrap non-essential animations (hover lifts, decorative motion) so they're disabled or reduced for users with that preference set; keep functional feedback (loading states) but make it instant/simpler rather than animated for those users.
+Don't introduce a heavy animation library unless truly needed — Tailwind's transition utilities plus CSS transitions/keyframes handle most of this. If a collapse/expand height animation genuinely needs it, a small utility (e.g. a lightweight React transition helper) is fine, but justify it rather than defaulting to it.
+No layout shift — animations should never cause content to jump or reflow unexpectedly (e.g. skeleton loaders must match final content dimensions).
+Process
+Do the audit first (interactive element → current state) and show me the list.
+Implement in this order: loading states/skeletons → card hovers → vote button feedback → comment collapse/expand animation → reply form transitions → toasts → sort tab indicator.
+After implementing, go back through the same audit list and confirm every item now has appropriate feedback — nothing should be left in a "dead" state.
