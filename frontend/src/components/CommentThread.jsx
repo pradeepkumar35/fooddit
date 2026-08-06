@@ -8,6 +8,7 @@ import CommentNode from './CommentNode'
 import EmptyState from './EmptyState'
 import PillTabs from './PillTabs'
 import { CommentThreadSkeleton } from './Skeleton'
+import { subscribe } from '../lib/live'
 
 const countNodes = (nodes) => nodes.reduce((total, node) => total + 1 + countNodes(node.replies), 0)
 
@@ -45,6 +46,14 @@ export default function CommentThread({ reviewId }) {
   useEffect(() => {
     load()
   }, [load])
+
+  // A new comment (possibly posted by another client) arrived on this review's
+  // live stream: refresh so it appears without a page reload.
+  useEffect(() => {
+    return subscribe('comment.created', (event) => {
+      if (event.reviewId === reviewId) load()
+    })
+  }, [reviewId, load])
 
   useEffect(() => {
     if (!newCommentId) return

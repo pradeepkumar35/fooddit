@@ -8,6 +8,7 @@ import ReviewCard from '../components/ReviewCard'
 import ReviewForm from '../components/ReviewForm'
 import { RestaurantCardSkeleton, Skeleton } from '../components/Skeleton'
 import { useAuth } from '../hooks/useAuth'
+import useLiveStream from '../hooks/useLiveStream'
 
 export default function RestaurantDetailPage() {
   const { id } = useParams()
@@ -15,6 +16,7 @@ export default function RestaurantDetailPage() {
   const notify = useToast()
   const navigate = useNavigate()
   const location = useLocation()
+  useLiveStream(id)
   const [restaurant, setRestaurant] = useState(null)
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)

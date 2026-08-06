@@ -1,6 +1,7 @@
 package com.fooddit.config.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -67,8 +68,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleUnexpected(Exception ex, HttpServletRequest request) {
+    public ResponseEntity<ApiError> handleUnexpected(Exception ex,
+                                                    HttpServletRequest request,
+                                                    HttpServletResponse response) {
         log.error("Unexpected error while handling {} {}", request.getMethod(), request.getRequestURI(), ex);
+        if (response.isCommitted()) {
+            // The response (e.g. an SSE stream) is already committed and the client is
+            // typically gone (connection reset/abort); there is nothing meaningful we
+            // can write, so just mark the request as handled.
+            return null;
+        }
         ApiError body = ApiError.of(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request.getRequestURI(), null);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }

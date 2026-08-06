@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { castVote } from '../api/votes'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../context/ToastContext'
+import { subscribe } from '../lib/live'
 
 /**
  * Reddit-style upvote/downvote with toggle semantics, used by review posts and
@@ -22,6 +23,23 @@ export default function VoteControl({ votableType, votableId, initialScore, init
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [pop, setPop] = useState({ dir: null, n: 0 })
+
+  // Follow refreshed props (e.g. after a thread reload) so a stale initial value
+  // never persists for this votable.
+  useEffect(() => {
+    setScore(initialScore)
+    setMyVote(initialMyVote)
+  }, [initialScore, initialMyVote])
+
+  // Live vote from another client: update the visible tally in-place. We only
+  // touch the score (myVote is viewer-specific and not part of the broadcast).
+  useEffect(() => {
+    return subscribe('vote.updated', (event) => {
+      if (event.votableType === votableType && event.votableId === votableId) {
+        setScore(event.score)
+      }
+    })
+  }, [votableType, votableId])
 
   const handleVote = async (value) => {
     if (!isAuthenticated) {

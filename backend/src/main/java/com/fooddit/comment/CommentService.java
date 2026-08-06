@@ -11,6 +11,8 @@ import com.fooddit.config.exception.NotFoundException;
 import com.fooddit.notification.NotificationService;
 import com.fooddit.review.ReviewService;
 import com.fooddit.review.entity.Review;
+import com.fooddit.stream.CommentCreatedEvent;
+import com.fooddit.stream.LiveEventPublisher;
 import com.fooddit.user.entity.User;
 import com.fooddit.user.repository.UserRepository;
 import com.fooddit.vote.VoteService;
@@ -33,6 +35,7 @@ public class CommentService {
     private final UserRepository userRepository;
     private final VoteService voteService;
     private final NotificationService notificationService;
+    private final LiveEventPublisher liveEventPublisher;
 
     /**
      * Loads every comment for a review as a flat list, orders the siblings at
@@ -71,7 +74,10 @@ public class CommentService {
 
         Comment saved = commentRepository.save(new Comment(review, user, parent, request.content().trim()));
         notificationService.notifyCommentActivity(saved);
-        return CommentDto.from(saved);
+        CommentDto dto = CommentDto.from(saved);
+        liveEventPublisher.afterCommit(review.getRestaurant().getId(), "comment.created",
+                new CommentCreatedEvent(reviewId, dto));
+        return dto;
     }
 
     @Transactional

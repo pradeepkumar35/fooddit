@@ -4,6 +4,8 @@ import com.fooddit.comment.repository.CommentRepository;
 import com.fooddit.config.exception.BadRequestException;
 import com.fooddit.config.exception.NotFoundException;
 import com.fooddit.review.repository.ReviewRepository;
+import com.fooddit.stream.LiveEventPublisher;
+import com.fooddit.stream.VoteUpdatedEvent;
 import com.fooddit.user.entity.User;
 import com.fooddit.user.repository.UserRepository;
 import com.fooddit.vote.dto.VoteRequest;
@@ -29,6 +31,7 @@ public class VoteService {
     private final ReviewRepository reviewRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final LiveEventPublisher liveEventPublisher;
 
     /**
      * Casts a vote with Reddit-style semantics: voting the same direction again
@@ -41,7 +44,7 @@ public class VoteService {
         if (request.voteValue() != 1 && request.voteValue() != -1) {
             throw new BadRequestException("voteValue must be -1 or 1");
         }
-        ensureVotableExists(request.votableType(), request.votableId());
+        UUID restaurantId = restaurantIdFor(request.votableType(), request.votableId());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
@@ -63,6 +66,8 @@ public class VoteService {
 
         int score = voteRepository.scoreByVotable(request.votableType(), request.votableId());
         Integer myVote = toggledOff ? null : request.voteValue();
+        liveEventPublisher.afterCommit(restaurantId, "vote.updated",
+                new VoteUpdatedEvent(request.votableType(), request.votableId(), score));
         return new VoteResponse(request.votableType(), request.votableId(), score, myVote);
     }
 
@@ -94,12 +99,14 @@ public class VoteService {
                 .collect(Collectors.toMap(Vote::getVotableId, Vote::getVoteValue));
     }
 
-    private void ensureVotableExists(VotableType type, UUID votableId) {
-        switch (type) {
+    private UUID restaurantIdFor(VotableType type, UUID votableId) {
+        return switch (type) {
             case REVIEW -> reviewRepository.findById(votableId)
-                    .orElseThrow(() -> new NotFoundException("Review not found"));
+                    .orElseThrow(() -> new NotFoundException("Review not found"))
+                    .getRestaurant().getId();
             case COMMENT -> commentRepository.findById(votableId)
-                    .orElseThrow(() -> new NotFoundException("Comment not found"));
-        }
+                    .orElseThrow(() -> new NotFoundException("Comment not found"))
+                    .getReview().getRestaurant().getId();
+        };
     }
 }

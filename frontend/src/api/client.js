@@ -2,6 +2,8 @@ import axios from 'axios'
 
 const AUTH_KEY = 'fooddit.auth'
 
+export const API_URL = import.meta.env.VITE_API_URL || '/api'
+
 export function loadAuth() {
   try {
     return JSON.parse(localStorage.getItem(AUTH_KEY)) ?? null
@@ -24,7 +26,7 @@ export function clearAuth() {
  * every request, and signs the user out on a 401 from an authenticated request.
  */
 export const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_URL,
 })
 
 client.interceptors.request.use((config) => {
