@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { createReport } from '../api/reports'
 import { useAuth } from '../hooks/useAuth'
@@ -16,6 +17,11 @@ const REASONS = [
  * reason picker and submits a report. Anonymous users are redirected to /login
  * preserving the return path. Only ever removes itself from view after a
  * successful (or duplicate) report — there is no moderation UI in this PoC.
+ *
+ * The reason picker is rendered through a portal into {@code document.body} so
+ * it is never clipped by overflow-hidden ancestors (comment reply threads use
+ * overflow-hidden for their collapse animation); it is positioned from the
+ * button and closes on outside mousedown, scrolling or resizing.
  */
 export default function ReportMenu({ targetType, targetId }) {
   const { isAuthenticated } = useAuth()
@@ -25,17 +31,42 @@ export default function ReportMenu({ targetType, targetId }) {
   const [open, setOpen] = useState(false)
   const [state, setState] = useState('idle')
   const [error, setError] = useState('')
-  const ref = useRef(null)
+  const [pos, setPos] = useState(null)
+  const btnRef = useRef(null)
 
   useEffect(() => {
+    if (!open) return undefined
     const onClickOutside = (event) => {
-      if (ref.current && !ref.current.contains(event.target)) {
-        setOpen(false)
-      }
+      if (event.target?.closest?.(`[data-report="${targetType}-${targetId}"]`)) return
+      setOpen(false)
     }
+    const close = () => setOpen(false)
+    // mousedown lets us close before a click, without catching the trigger
+    // itself; scroll/resize close so a fixed-position menu never goes stale.
     document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [])
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
+  }, [open, targetType, targetId])
+
+  const openMenu = () => {
+    if (open) {
+      setOpen(false)
+      return
+    }
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (rect) {
+      setPos({
+        top: rect.bottom + 6,
+        right: Math.max(0, window.innerWidth - rect.right),
+      })
+    }
+    setOpen(true)
+  }
 
   const handleReport = async (reason) => {
     if (!isAuthenticated) {
@@ -60,17 +91,21 @@ export default function ReportMenu({ targetType, targetId }) {
     }
   }
 
+  const guard = `${targetType}-${targetId}`
+
   if (state === 'done') {
     return <span className="text-xs text-muted">Reported</span>
   }
 
   return (
-    <div className="relative inline-block" ref={ref}>
+    <>
       <button
+        ref={btnRef}
         type="button"
+        data-report={guard}
         aria-label="More actions"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={openMenu}
         className="rounded-md p-1 text-muted transition-colors duration-150 hover:bg-canvas hover:text-ink"
       >
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
@@ -80,25 +115,32 @@ export default function ReportMenu({ targetType, targetId }) {
         </svg>
       </button>
 
-      {open && (
-        <div className="animate-fade-slide-in absolute right-0 top-full z-10 mt-1 w-44 rounded-lg border border-line bg-surface py-1 shadow-card-hover">
-          <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
-            Report
-          </p>
-          {REASONS.map((reason) => (
-            <button
-              key={reason.value}
-              type="button"
-              disabled={state === 'submitting'}
-              onClick={() => handleReport(reason.value)}
-              className="block w-full px-3 py-2 text-left text-sm text-ink transition-colors duration-150 hover:bg-canvas disabled:opacity-50"
-            >
-              {reason.label}
-            </button>
-          ))}
-          {state === 'error' && <p className="px-3 py-2 text-xs text-chili-600">{error}</p>}
-        </div>
-      )}
-    </div>
+      {open &&
+        createPortal(
+          <div
+            role="menu"
+            data-report={guard}
+            style={{ top: pos?.top ?? 0, right: pos?.right ?? 0 }}
+            className="animate-fade-slide-in fixed z-50 w-44 overflow-hidden rounded-lg border border-line bg-surface py-1 shadow-card-hover"
+          >
+            <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
+              Report
+            </p>
+            {REASONS.map((reason) => (
+              <button
+                key={reason.value}
+                type="button"
+                disabled={state === 'submitting'}
+                onClick={() => handleReport(reason.value)}
+                className="block w-full px-3 py-2 text-left text-sm text-ink transition-colors duration-150 hover:bg-canvas disabled:opacity-50"
+              >
+                {reason.label}
+              </button>
+            ))}
+            {state === 'error' && <p className="px-3 py-2 text-xs text-chili-600">{error}</p>}
+          </div>,
+          document.body,
+        )}
+    </>
   )
 }

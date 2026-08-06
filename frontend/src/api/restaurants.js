@@ -2,6 +2,8 @@ import { client } from './client'
 
 export const listRestaurants = (params = {}) => client.get('/restaurants', { params }).then((res) => res.data)
 export const listCuisines = () => client.get('/restaurants/cuisines').then((res) => res.data)
+export const suggestRestaurants = (city, q, signal) =>
+  client.get('/restaurants/suggestions', { params: { city, q }, signal }).then((res) => res.data)
 export const getRestaurant = (id) => client.get(`/restaurants/${id}`).then((res) => res.data)
 export const listReviews = (restaurantId) => client.get(`/restaurants/${restaurantId}/reviews`).then((res) => res.data)
 export const createReview = (restaurantId, data) =>

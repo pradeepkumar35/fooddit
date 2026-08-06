@@ -3,6 +3,7 @@ package com.fooddit.restaurant;
 import com.fooddit.comment.repository.CommentRepository;
 import com.fooddit.config.exception.NotFoundException;
 import com.fooddit.restaurant.dto.RestaurantDto;
+import com.fooddit.restaurant.dto.RestaurantSuggestionDto;
 import com.fooddit.restaurant.entity.Restaurant;
 import com.fooddit.restaurant.repository.RestaurantRepository;
 import com.fooddit.review.repository.ReviewRepository;
@@ -84,6 +85,19 @@ public class RestaurantService {
                         ReviewRepository.RestaurantReviewCount::getCount));
         return saved.stream()
                 .map(s -> RestaurantDto.from(s.getRestaurant(), counts.getOrDefault(s.getRestaurant().getId(), 0L), true))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RestaurantSuggestionDto> suggest(String citySlug, String q) {
+        String trimmed = q == null ? "" : q.trim();
+        if (trimmed.isEmpty()) {
+            return List.of();
+        }
+        return restaurantRepository
+                .findTop8ByCitySlugIgnoreCaseAndNameContainingIgnoreCaseOrderByNameAsc(citySlug, trimmed)
+                .stream()
+                .map(RestaurantSuggestionDto::from)
                 .toList();
     }
 

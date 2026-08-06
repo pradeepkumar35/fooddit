@@ -2,6 +2,7 @@ package com.fooddit.restaurant;
 
 import com.fooddit.config.exception.BadRequestException;
 import com.fooddit.restaurant.dto.RestaurantDto;
+import com.fooddit.restaurant.dto.RestaurantSuggestionDto;
 import com.fooddit.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -55,6 +56,17 @@ public class RestaurantController {
     @GetMapping("/cuisines")
     public List<String> cuisines() {
         return restaurantService.listCuisines();
+    }
+
+    /**
+     * Lightweight name suggestions for the search autocomplete, scoped to a
+     * city. Returns at most 8 {@code {id, name, locality}} rows.
+     */
+    @GetMapping("/suggestions")
+    public List<RestaurantSuggestionDto> suggestions(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String q) {
+        return restaurantService.suggest(city == null ? "" : city, q == null ? "" : q);
     }
 
     /**

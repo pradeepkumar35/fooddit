@@ -87,8 +87,32 @@ public class CommentService {
         if (!comment.getUser().getId().equals(userId)) {
             throw new ForbiddenException("You can only edit your own comments");
         }
+        if (comment.isDeleted()) {
+            throw new BadRequestException("A deleted comment cannot be edited");
+        }
         comment.setContent(request.content().trim());
         comment.setEditedAt(Instant.now());
+        return CommentDto.from(comment);
+    }
+
+    /**
+     * Soft-deletes a comment. Only its author may delete it. A deleted comment
+     * keeps its row and any nested replies, but renders as a placeholder in the
+     * UI. Deleting is idempotent: deleting an already-deleted comment returns
+     * the current state without error.
+     */
+    @Transactional
+    public CommentDto delete(UUID commentId, UUID userId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new NotFoundException("Comment not found"));
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new ForbiddenException("You can only delete your own comments");
+        }
+        if (!comment.isDeleted()) {
+            comment.setDeleted(true);
+            comment.setDeletedAt(Instant.now());
+            commentRepository.save(comment);
+        }
         return CommentDto.from(comment);
     }
 
@@ -105,6 +129,7 @@ public class CommentService {
                 node.content(),
                 node.createdAt(),
                 node.editedAt(),
+                node.deleted(),
                 node.replies().stream().map(child -> enrich(child, scores, myVotes)).toList(),
                 scores.getOrDefault(node.id(), 0),
                 myVotes.get(node.id()));

@@ -4,6 +4,7 @@ import com.fooddit.support.IntegrationTestBase;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -114,5 +115,126 @@ class CommentApiIntegrationTest extends IntegrationTestBase {
                                 """))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("You can only edit your own comments"));
+    }
+
+    @Test
+    void authorCanSoftDeleteOwnComment() throws Exception {
+        Signup signup = signup(uniqueEmail());
+        String restaurantId = firstRestaurantId();
+        String reviewId = createReview(signup.token(), restaurantId, 5, "Tasty");
+        String commentId = createComment(signup.token(), reviewId, "delete me", null);
+
+        mockMvc.perform(delete("/api/reviews/" + reviewId + "/comments/" + commentId)
+                        .header("Authorization", "Bearer " + signup.token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deleted").value(true));
+
+        mockMvc.perform(get("/api/reviews/" + reviewId + "/comments"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].deleted").value(true))
+                .andExpect(jsonPath("$[0].content").value("delete me"));
+    }
+
+    @Test
+    void cannotDeleteAnotherUsersComment() throws Exception {
+        Signup author = signup(uniqueEmail());
+        Signup other = signup(uniqueEmail());
+        String restaurantId = firstRestaurantId();
+        String reviewId = createReview(author.token(), restaurantId, 5, "Tasty");
+        String commentId = createComment(author.token(), reviewId, "mine", null);
+
+        mockMvc.perform(delete("/api/reviews/" + reviewId + "/comments/" + commentId)
+                        .header("Authorization", "Bearer " + other.token()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("You can only delete your own comments"));
+    }
+
+    @Test
+    void deletedCommentKeepsNestedReplies() throws Exception {
+        Signup signup = signup(uniqueEmail());
+        String restaurantId = firstRestaurantId();
+        String reviewId = createReview(signup.token(), restaurantId, 5, "Tasty");
+        String rootId = createComment(signup.token(), reviewId, "root", null);
+        String replyId = createComment(signup.token(), reviewId, "nested reply", rootId);
+
+        mockMvc.perform(delete("/api/reviews/" + reviewId + "/comments/" + rootId)
+                        .header("Authorization", "Bearer " + signup.token()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/reviews/" + reviewId + "/comments"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].deleted").value(true))
+                .andExpect(jsonPath("$[0].replies.length()").value(1))
+                .andExpect(jsonPath("$[0].replies[0].id").value(replyId))
+                .andExpect(jsonPath("$[0].replies[0].deleted").value(false));
+    }
+
+    @Test
+    void deletingAnAlreadyDeletedCommentIsIdempotent() throws Exception {
+        Signup signup = signup(uniqueEmail());
+        String restaurantId = firstRestaurantId();
+        String reviewId = createReview(signup.token(), restaurantId, 5, "Tasty");
+        String commentId = createComment(signup.token(), reviewId, "delete me", null);
+
+        mockMvc.perform(delete("/api/reviews/" + reviewId + "/comments/" + commentId)
+                        .header("Authorization", "Bearer " + signup.token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deleted").value(true));
+
+        mockMvc.perform(delete("/api/reviews/" + reviewId + "/comments/" + commentId)
+                        .header("Authorization", "Bearer " + signup.token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deleted").value(true));
+    }
+
+    @Test
+    void editingAVoteOnADeletedCommentIsRejected() throws Exception {
+        Signup signup = signup(uniqueEmail());
+        String restaurantId = firstRestaurantId();
+        String reviewId = createReview(signup.token(), restaurantId, 5, "Tasty");
+        String commentId = createComment(signup.token(), reviewId, "do not touch", null);
+
+        mockMvc.perform(delete("/api/reviews/" + reviewId + "/comments/" + commentId)
+                        .header("Authorization", "Bearer " + signup.token()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/api/reviews/" + reviewId + "/comments/" + commentId)
+                        .header("Authorization", "Bearer " + signup.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"resurrected"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("A deleted comment cannot be edited"));
+
+        mockMvc.perform(post("/api/votes")
+                        .header("Authorization", "Bearer " + signup.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"votableType":"COMMENT","votableId":"%s","voteValue":1}
+                                """.formatted(commentId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("You cannot vote on a deleted comment"));
+    }
+
+    @Test
+    void reportingADeletedCommentIsRejected() throws Exception {
+        Signup signup = signup(uniqueEmail());
+        String restaurantId = firstRestaurantId();
+        String reviewId = createReview(signup.token(), restaurantId, 5, "Tasty");
+        String commentId = createComment(signup.token(), reviewId, "do not report me", null);
+
+        mockMvc.perform(delete("/api/reviews/" + reviewId + "/comments/" + commentId)
+                        .header("Authorization", "Bearer " + signup.token()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/reports")
+                        .header("Authorization", "Bearer " + signup.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"targetType":"COMMENT","targetId":"%s","reason":"SPAM"}
+                                """.formatted(commentId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("You cannot report a deleted comment"));
     }
 }

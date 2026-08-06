@@ -11,3 +11,5 @@ export const createComment = (reviewId, data) =>
   client.post(`/reviews/${reviewId}/comments`, data).then((res) => res.data)
 export const updateComment = (reviewId, commentId, data) =>
   client.patch(`/reviews/${reviewId}/comments/${commentId}`, data).then((res) => res.data)
+export const deleteComment = (reviewId, commentId) =>
+  client.delete(`/reviews/${reviewId}/comments/${commentId}`).then((res) => res.data)

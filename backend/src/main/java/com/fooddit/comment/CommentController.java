@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,5 +56,12 @@ public class CommentController {
                              @Valid @RequestBody UpdateCommentRequest request,
                              @AuthenticationPrincipal UUID currentUserId) {
         return commentService.update(commentId, currentUserId, request);
+    }
+
+    @DeleteMapping("/{commentId}")
+    public CommentDto delete(@PathVariable UUID reviewId,
+                             @PathVariable UUID commentId,
+                             @AuthenticationPrincipal UUID currentUserId) {
+        return commentService.delete(commentId, currentUserId);
     }
 }

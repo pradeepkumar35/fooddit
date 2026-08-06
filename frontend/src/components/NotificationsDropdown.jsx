@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { listNotifications, markAllNotificationsRead, markNotificationRead } from '../api/notifications'
+import { useNotifications } from '../context/NotificationsContext'
 
 function timeAgo(iso) {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -21,39 +21,17 @@ const TYPE_TEXT = {
 }
 
 /**
- * Bell + dropdown showing reply notifications. Loads the unread count on mount
- * and polls every 30s so the badge is always current; opening the dropdown also
- * refreshes immediately. Clicking a notification opens the restaurant page and
- * marks it read.
+ * Bell + dropdown showing reply notifications. Polling and the unread badge are
+ * owned by {@link NotificationsProvider} (hoisted to app level), so the badge
+ * stays fresh even when this dropdown is not mounted. Opening the dropdown
+ * additionally triggers an immediate refresh; clicking a notification opens the
+ * restaurant page and marks it read.
  */
 export default function NotificationsDropdown() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
-  const [items, setItems] = useState([])
-  const [unread, setUnread] = useState(0)
-  const [loading, setLoading] = useState(false)
+  const { items, unread, loading, load, markRead, markAllRead } = useNotifications()
   const ref = useRef(null)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await listNotifications()
-      setItems(data.notifications || [])
-      setUnread(data.unreadCount || 0)
-    } catch {
-      /* keep the badge as-is on failure */
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  // Load the unread count on mount (so the badge shows without opening the
-  // dropdown) and keep polling regardless of open state to stay fresh.
-  useEffect(() => {
-    load()
-    const id = setInterval(load, 30000)
-    return () => clearInterval(id)
-  }, [load])
 
   useEffect(() => {
     const onClickOutside = (event) => {
@@ -70,27 +48,13 @@ export default function NotificationsDropdown() {
     })
   }
 
-  const handleClick = async (notification) => {
+  const handleClick = (notification) => {
     setOpen(false)
-    if (!notification.read) {
-      setUnread((n) => Math.max(0, n - 1))
-      setItems((current) =>
-        current.map((item) => (item.id === notification.id ? { ...item, read: true } : item)),
-      )
-      markNotificationRead(notification.id).catch(() => {})
-    }
+    if (!notification.read) markRead(notification.id)
     navigate(`/restaurants/${notification.restaurantId}`)
   }
 
-  const handleMarkAllRead = async () => {
-    setItems((current) => current.map((item) => ({ ...item, read: true })))
-    setUnread(0)
-    try {
-      await markAllNotificationsRead()
-    } catch {
-      /* revert handled by next poll */
-    }
-  }
+  const handleMarkAllRead = () => markAllRead()
 
   return (
     <div className="relative" ref={ref}>

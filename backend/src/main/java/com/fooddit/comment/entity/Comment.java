@@ -63,6 +63,18 @@ public class Comment {
     @Column(name = "edited_at")
     private Instant editedAt;
 
+    /**
+     * True once the author soft-deleted the comment. The row is kept (it may
+     * have replies hanging off it) so the thread stays intact; the UI hides the
+     * author/content and shows a placeholder instead.
+     */
+    @Column(name = "is_deleted", nullable = false)
+    private boolean deleted;
+
+    /** When {@link #deleted} was set. Null while the comment is still live. */
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     public Comment(Review review, User user, Comment parentComment, String content) {
         this.review = review;
         this.user = user;

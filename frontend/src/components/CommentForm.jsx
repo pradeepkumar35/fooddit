@@ -48,27 +48,24 @@ export default function CommentForm({
         className="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors duration-150 focus:border-accent"
       />
       {error && <p className="mt-1 text-xs text-chili-600">{error}</p>}
-      <div className="mt-1 flex items-center justify-between">
-        <span className="text-xs text-muted">{content.length}/2000</span>
-        <div className="flex gap-2">
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="rounded-lg px-3 py-2 text-sm text-muted transition-colors duration-150 hover:text-ink"
-            >
-              Cancel
-            </button>
-          )}
+      <div className="mt-1 flex items-center justify-end gap-2">
+        {onCancel && (
           <button
-            type="submit"
-            disabled={submitting || !content.trim()}
-            className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg px-3 py-2 text-sm text-muted transition-colors duration-150 hover:text-ink"
           >
-            {submitting && <Spinner />}
-            {submitting ? 'Posting…' : submitLabel}
+            Cancel
           </button>
-        </div>
+        )}
+        <button
+          type="submit"
+          disabled={submitting || !content.trim()}
+          className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {submitting && <Spinner />}
+          {submitting ? 'Posting…' : submitLabel}
+        </button>
       </div>
     </form>
   )

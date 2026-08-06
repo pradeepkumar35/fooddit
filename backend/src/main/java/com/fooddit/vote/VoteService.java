@@ -1,5 +1,6 @@
 package com.fooddit.vote;
 
+import com.fooddit.comment.entity.Comment;
 import com.fooddit.comment.repository.CommentRepository;
 import com.fooddit.config.exception.BadRequestException;
 import com.fooddit.config.exception.NotFoundException;
@@ -104,9 +105,14 @@ public class VoteService {
             case REVIEW -> reviewRepository.findById(votableId)
                     .orElseThrow(() -> new NotFoundException("Review not found"))
                     .getRestaurant().getId();
-            case COMMENT -> commentRepository.findById(votableId)
-                    .orElseThrow(() -> new NotFoundException("Comment not found"))
-                    .getReview().getRestaurant().getId();
+            case COMMENT -> {
+                Comment comment = commentRepository.findById(votableId)
+                        .orElseThrow(() -> new NotFoundException("Comment not found"));
+                if (comment.isDeleted()) {
+                    throw new BadRequestException("You cannot vote on a deleted comment");
+                }
+                yield comment.getReview().getRestaurant().getId();
+            }
         };
     }
 }

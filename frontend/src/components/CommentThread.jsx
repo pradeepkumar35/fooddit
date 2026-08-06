@@ -32,6 +32,16 @@ export default function CommentThread({ reviewId }) {
   const [sort, setSort] = useState('best')
   const [error, setError] = useState('')
   const [newCommentId, setNewCommentId] = useState(null)
+  const [openReplyId, setOpenReplyId] = useState(null)
+
+  // Only one reply form is open across the whole thread at a time; the sentinel
+  // '__root__' represents the top-level compose form, a comment id a nested one.
+  // Toggling the currently open id closes it, so a reply form slides shut when
+  // a different one is opened.
+  const toggleReply = useCallback((id) => {
+    setOpenReplyId((current) => (current === id ? null : id))
+  }, [])
+  const closeReply = useCallback(() => setOpenReplyId(null), [])
 
   const load = useCallback(async () => {
     setError('')
@@ -105,7 +115,37 @@ export default function CommentThread({ reviewId }) {
       </div>
 
       {isAuthenticated ? (
-        <CommentForm placeholder="What are your thoughts?" onSubmit={(content) => handleCreate(null, content)} />
+        openReplyId === '__root__' ? (
+          <CommentForm
+            placeholder="What are your thoughts?"
+            autoFocus
+            onSubmit={(content) => handleCreate(null, content)}
+            onSubmitted={closeReply}
+            onCancel={closeReply}
+          />
+        ) : (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => toggleReply('__root__')}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-muted transition-colors duration-150 hover:border-accent/50 hover:text-accent"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              Reply
+            </button>
+          </div>
+        )
       ) : (
         <p className="mt-2 text-xs text-muted">
           <Link to="/login" className="font-medium text-accent transition-colors duration-150 hover:underline">
@@ -136,6 +176,8 @@ export default function CommentThread({ reviewId }) {
                 onReply={handleCreate}
                 onUpdated={load}
                 highlightId={newCommentId}
+                openReplyId={openReplyId}
+                onToggleReply={toggleReply}
               />
             </li>
           ))}

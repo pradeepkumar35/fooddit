@@ -27,3 +27,9 @@ Thumbs.db
 
 # Large raw datasets (not committed; local import source only)
 data/
+
+# Stray root files holding backend secrets (never commit)
+backend env.txt
+backend env 2.txt
+#~*.docx
+~$*.docx

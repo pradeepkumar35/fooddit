@@ -22,6 +22,7 @@ public record CommentDto(
         String content,
         Instant createdAt,
         Instant editedAt,
+        boolean deleted,
         List<CommentDto> replies,
         int score,
         Integer myVote
@@ -36,6 +37,7 @@ public record CommentDto(
                 comment.getContent(),
                 comment.getCreatedAt(),
                 comment.getEditedAt(),
+                comment.isDeleted(),
                 new ArrayList<>(),
                 0,
                 null);

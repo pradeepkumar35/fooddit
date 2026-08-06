@@ -25,4 +25,11 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, UUID>, J
     /** Distinct cuisine names across all restaurants, ordered A-Z (filter options). */
     @Query("select distinct c from Restaurant r join r.cuisines c order by c")
     List<String> findDistinctCuisines();
+
+    /**
+     * Name-based suggestions scoped to a city, for the search-box autocomplete.
+     * Ordered by name and capped at 8 so the dropdown stays snappy.
+     */
+    List<Restaurant> findTop8ByCitySlugIgnoreCaseAndNameContainingIgnoreCaseOrderByNameAsc(
+            String citySlug, String name);
 }

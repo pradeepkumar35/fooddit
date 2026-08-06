@@ -74,4 +74,30 @@ class RestaurantFilterIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@ == 'South Indian')]").exists());
     }
+
+    @Test
+    void suggestionsAreScopedToCityAndMatchByName() throws Exception {
+        mockMvc.perform(get("/api/restaurants/suggestions")
+                        .param("city", "mumbai")
+                        .param("q", "dosa"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Dosa Dynasty"))
+                .andExpect(jsonPath("$[0].locality").isNotEmpty())
+                .andExpect(jsonPath("$[0].id").exists());
+    }
+
+    @Test
+    void suggestionsReturnNothingForBlankQueryOrWrongCity() throws Exception {
+        mockMvc.perform(get("/api/restaurants/suggestions")
+                        .param("city", "mumbai")
+                        .param("q", "  "))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(get("/api/restaurants/suggestions")
+                        .param("city", "mumbai")
+                        .param("q", "biryani-nowhere"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
 }

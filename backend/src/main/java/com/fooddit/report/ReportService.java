@@ -1,6 +1,8 @@
 package com.fooddit.report;
 
+import com.fooddit.comment.entity.Comment;
 import com.fooddit.comment.repository.CommentRepository;
+import com.fooddit.config.exception.BadRequestException;
 import com.fooddit.config.exception.ConflictException;
 import com.fooddit.config.exception.NotFoundException;
 import com.fooddit.report.dto.CreateReportRequest;
@@ -50,8 +52,13 @@ public class ReportService {
         switch (type) {
             case REVIEW -> reviewRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException("Review not found"));
-            case COMMENT -> commentRepository.findById(id)
-                    .orElseThrow(() -> new NotFoundException("Comment not found"));
+            case COMMENT -> {
+                Comment comment = commentRepository.findById(id)
+                        .orElseThrow(() -> new NotFoundException("Comment not found"));
+                if (comment.isDeleted()) {
+                    throw new BadRequestException("You cannot report a deleted comment");
+                }
+            }
         }
     }
 }
