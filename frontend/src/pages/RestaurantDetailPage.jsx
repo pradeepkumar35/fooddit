@@ -9,6 +9,7 @@ import ReviewForm from '../components/ReviewForm'
 import { RestaurantCardSkeleton, Skeleton } from '../components/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import useLiveStream from '../hooks/useLiveStream'
+import { subscribe } from '../lib/live'
 
 export default function RestaurantDetailPage() {
   const { id } = useParams()
@@ -47,6 +48,15 @@ export default function RestaurantDetailPage() {
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  // A new review for this restaurant was posted by another client: refresh the
+  // reviews list (and header rating) so it appears live, like comments already
+  // do via the comment.created event.
+  useEffect(() => {
+    return subscribe('review.created', (event) => {
+      if (event.restaurantId === id) loadData()
+    })
+  }, [id, loadData])
 
   const handleSave = async () => {
     if (!isAuthenticated) {

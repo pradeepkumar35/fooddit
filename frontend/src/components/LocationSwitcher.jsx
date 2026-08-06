@@ -290,7 +290,7 @@ export default function LocationSwitcher() {
 
               {showForm && (
                 <form onSubmit={handleAddAddress} className="mb-3 space-y-2 rounded-lg border border-line p-3">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <input
                       value={form.label}
                       onChange={(event) => setForm((f) => ({ ...f, label: event.target.value }))}

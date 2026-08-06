@@ -40,6 +40,19 @@
   /* Radius: 8px cards/buttons (rounded-lg), 6px small elements (rounded-md). */
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
+
+  /* Indentation added per nesting level in a threaded comment tree. CommentNode
+     multiplies this by min(depth, cap) for the row's left offset, so a deep
+     thread stays readable instead of pushing content off small screens. */
+  --thread-indent: 0.5rem;
+}
+
+/* Above the md breakpoint comments have room for a roomier 24px-per-level
+   indent. Unlayered so it wins over the @layer theme token (like .dark). */
+@media (min-width: 48rem) {
+  :root {
+    --thread-indent: 1.5rem;
+  }
 }
 
 /* Unlayered so these override the @layer theme :root tokens (same specificity,

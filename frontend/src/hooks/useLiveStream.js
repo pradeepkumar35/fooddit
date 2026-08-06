@@ -22,6 +22,13 @@ export default function useLiveStream(restaurantId) {
         /* ignore malformed frames */
       }
     })
+    source.addEventListener('review.created', (event) => {
+      try {
+        publish('review.created', JSON.parse(event.data))
+      } catch {
+        /* ignore malformed frames */
+      }
+    })
     source.addEventListener('vote.updated', (event) => {
       try {
         publish('vote.updated', JSON.parse(event.data))

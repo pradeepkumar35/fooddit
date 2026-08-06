@@ -11,6 +11,13 @@ import VoteControl from './VoteControl'
 
 const countNodes = (nodes) => nodes.reduce((total, node) => total + 1 + countNodes(node.replies), 0)
 
+// Indentation stops growing past these depths so deep threads can't push
+// content off narrow screens; the vertical connector line carries the rest.
+const MAX_INDENT_DEPTH = { mobile: 5, desktop: 8 }
+// On mobile, subtrees deeper than this start collapsed so an 8-level thread
+// isn't forced fully-expanded on a small screen (tap to open further).
+const AUTO_COLLAPSE_DEPTH = { mobile: 4, desktop: Number.POSITIVE_INFINITY }
+
 /**
  * A single node in the threaded comment tree. Nested replies are indented under
  * a vertical connector line on every level (Reddit's signature threading
@@ -18,6 +25,14 @@ const countNodes = (nodes) => nodes.reduce((total, node) => total + 1 + countNod
  * closed via an animated grid-rows transition (the replies stay mounted, just
  * clipped), a chevron that rotates on toggle, a subtle hover highlight, inline
  * editing for its author, a delete action for its author, and a report menu.
+ *
+ * Indentation is not a literal 1:1 map of depth: nested nodes compound a fixed
+ * {@code var(--thread-indent)} step (8px below md, 24px at md+) so a depth-d
+ * reply sits {@code min(d, cap) * step} from the thread's edge; the step drops
+ * to zero past the cap (5 levels on mobile, 8 on desktop) so deeper replies
+ * stop shifting right and the connector line alone carries the nesting.
+ * {@code isDesktop} also decides the auto-collapse threshold for very deep
+ * threads.
  *
  * A deleted comment keeps its row so the reply tree stays intact: the author
  * name and content are replaced by a muted "[deleted]" placeholder and all
@@ -37,11 +52,20 @@ export default function CommentNode({
   highlightId = null,
   openReplyId = null,
   onToggleReply,
+  depth = 0,
+  isDesktop = false,
 }) {
   const { isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [collapsed, setCollapsed] = useState(false)
+  const hasReplies = comment.replies.length > 0
+  const maxIndentDepth = isDesktop ? MAX_INDENT_DEPTH.desktop : MAX_INDENT_DEPTH.mobile
+  const autoCollapseDepth = isDesktop ? AUTO_COLLAPSE_DEPTH.desktop : AUTO_COLLAPSE_DEPTH.mobile
+  // Each node contributes one fixed indent unit to its own row; the boxes nest,
+  // so a depth-4 reply sits 4 * unit from the thread's edge. Past the cap the
+  // step is zero and deeper replies stay at the same column.
+  const indentStep = depth > 0 && depth <= maxIndentDepth ? 1 : 0
+  const [collapsed, setCollapsed] = useState(() => hasReplies && depth >= autoCollapseDepth)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(comment.content)
   const [saving, setSaving] = useState(false)
@@ -93,7 +117,18 @@ export default function CommentNode({
   }
 
   return (
-    <div className={highlighted ? 'animate-fade-slide-in' : ''}>
+    <div
+      className={`relative ${highlighted ? 'animate-fade-slide-in' : ''}`}
+      style={{ paddingLeft: `calc(${indentStep} * var(--thread-indent))` }}
+    >
+      {hasReplies && (
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-0 w-0.5 bg-line"
+          style={{ left: `calc(${indentStep} * var(--thread-indent))` }}
+        />
+      )}
+
       <div className="-mx-1 flex gap-2 rounded-md p-1 transition-colors duration-150 hover:bg-canvas/50">
         {deleted ? (
           <div className="w-8 shrink-0" aria-hidden="true" />
@@ -107,14 +142,14 @@ export default function CommentNode({
           />
         )}
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 break-words">
           <header className="text-xs text-muted">
             <button
               type="button"
               onClick={() => setCollapsed((value) => !value)}
               aria-expanded={!collapsed}
               aria-label={collapsed ? 'Expand replies' : 'Collapse replies'}
-              className="align-middle text-muted transition-colors duration-150 hover:text-accent"
+              className="-mx-1.5 -my-2.5 rounded px-1.5 py-3.5 align-middle text-muted transition-colors duration-150 hover:text-accent"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -149,7 +184,7 @@ export default function CommentNode({
           </header>
 
           {deleted ? (
-            <p className="mt-1 text-sm italic leading-relaxed text-muted">[deleted]</p>
+            <p className="mt-1 break-words text-sm italic leading-relaxed text-muted">[deleted]</p>
           ) : editing ? (
             <div className="animate-fade-slide-in mt-1">
               <textarea
@@ -165,7 +200,7 @@ export default function CommentNode({
                 <button
                   type="button"
                   onClick={() => setEditing(false)}
-                  className="text-xs text-muted transition-colors duration-150 hover:text-ink"
+                  className="-my-2 px-3 py-2 text-xs text-muted transition-colors duration-150 hover:text-ink"
                 >
                   Cancel
                 </button>
@@ -173,7 +208,7 @@ export default function CommentNode({
                   type="button"
                   onClick={saveEdit}
                   disabled={saving || !draft.trim()}
-                  className="flex items-center gap-2 rounded-lg bg-accent px-3 py-1 text-xs font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-95 disabled:opacity-50"
+                  className="-my-2 flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-xs font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-95 disabled:opacity-50"
                 >
                   {saving && <Spinner />}
                   {saving ? 'Saving…' : 'Save'}
@@ -181,7 +216,7 @@ export default function CommentNode({
               </div>
             </div>
           ) : (
-            <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/80">
+            <p className="mt-1 break-words whitespace-pre-wrap text-sm leading-relaxed text-ink/80">
               {comment.content}
             </p>
           )}
@@ -192,7 +227,7 @@ export default function CommentNode({
                 <button
                   type="button"
                   onClick={startReply}
-                  className="text-xs font-medium text-muted transition-colors duration-150 hover:text-accent"
+                  className="-my-2.5 rounded px-2 py-3.5 text-xs font-medium text-muted transition-colors duration-150 hover:text-accent"
                 >
                   Reply
                 </button>
@@ -204,7 +239,7 @@ export default function CommentNode({
                       setError('')
                       setEditing(true)
                     }}
-                    className="text-xs font-medium text-muted transition-colors duration-150 hover:text-accent"
+                    className="-my-2.5 rounded px-2 py-3.5 text-xs font-medium text-muted transition-colors duration-150 hover:text-accent"
                   >
                     Edit
                   </button>
@@ -214,7 +249,7 @@ export default function CommentNode({
                     type="button"
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="flex items-center gap-1 text-xs font-medium text-muted transition-colors duration-150 hover:text-chili-600 disabled:opacity-50"
+                    className="-my-2.5 flex items-center gap-1 rounded px-2 py-3.5 text-xs font-medium text-muted transition-colors duration-150 hover:text-chili-600 disabled:opacity-50"
                   >
                     {deleting && <Spinner />}
                     {deleting ? 'Deleting…' : 'Delete'}
@@ -223,7 +258,7 @@ export default function CommentNode({
                 {!isAuthor && <ReportMenu targetType="COMMENT" targetId={comment.id} />}
               </div>
 
-              {error && <p className="mt-1 text-xs text-chili-600">{error}</p>}
+              {error && <p className="mt-1 break-words text-xs text-chili-600">{error}</p>}
 
               {replyOpen && (
                 <div className="animate-fade-slide-in">
@@ -242,14 +277,14 @@ export default function CommentNode({
         </div>
       </div>
 
-      {comment.replies.length > 0 && (
+      {hasReplies && (
         <div
           className={`grid transition-[grid-template-rows] duration-200 ease-in-out ${
             collapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
           }`}
         >
           <div className="min-h-0 overflow-hidden">
-            <div className="ml-6 mt-2 space-y-3 border-l-2 border-line pl-3">
+            <div className="mt-2 space-y-3">
               {comment.replies.map((child) => (
                 <CommentNode
                   key={child.id}
@@ -260,6 +295,8 @@ export default function CommentNode({
                   highlightId={highlightId}
                   openReplyId={openReplyId}
                   onToggleReply={onToggleReply}
+                  depth={depth + 1}
+                  isDesktop={isDesktop}
                 />
               ))}
             </div>

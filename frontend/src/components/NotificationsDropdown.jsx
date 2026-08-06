@@ -77,7 +77,7 @@ export default function NotificationsDropdown() {
       </button>
 
       {open && (
-        <div className="animate-fade-slide-in absolute right-0 top-full z-10 mt-2 w-80 origin-top-right overflow-hidden rounded-lg border border-line bg-surface shadow-card-hover">
+        <div className="animate-fade-slide-in absolute right-0 top-full z-10 mt-2 w-80 max-w-[calc(100vw-1rem)] origin-top-right overflow-hidden rounded-lg border border-line bg-surface shadow-card-hover">
           <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
             <span className="text-sm font-semibold text-ink">Notifications</span>
             {unread > 0 && (

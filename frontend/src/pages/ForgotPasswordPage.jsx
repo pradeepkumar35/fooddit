@@ -79,7 +79,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="mx-auto mt-12 w-full max-w-md px-4">
-      <div className="rounded-lg border border-line bg-surface p-8 shadow-card">
+      <div className="rounded-lg border border-line bg-surface p-6 shadow-card sm:p-8">
         {step === 'done' ? (
           <>
             <h1 className="font-display text-2xl font-semibold text-ink">Password updated</h1>

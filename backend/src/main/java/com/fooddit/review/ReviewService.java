@@ -11,6 +11,8 @@ import com.fooddit.review.dto.ReviewDto;
 import com.fooddit.review.dto.UpdateReviewRequest;
 import com.fooddit.review.entity.Review;
 import com.fooddit.review.repository.ReviewRepository;
+import com.fooddit.stream.LiveEventPublisher;
+import com.fooddit.stream.ReviewCreatedEvent;
 import com.fooddit.user.entity.User;
 import com.fooddit.user.repository.UserRepository;
 import com.fooddit.vote.VoteService;
@@ -32,6 +34,7 @@ public class ReviewService {
     private final RestaurantService restaurantService;
     private final UserRepository userRepository;
     private final VoteService voteService;
+    private final LiveEventPublisher liveEventPublisher;
 
     @Transactional(readOnly = true)
     public List<ReviewDto> listByRestaurant(UUID restaurantId, UUID currentUserId) {
@@ -57,7 +60,12 @@ public class ReviewService {
 
         Review review = reviewRepository.save(new Review(user, restaurant, request.rating(), request.content().trim()));
         recalculateAverageRating(restaurant);
-        return ReviewDto.from(review);
+        ReviewDto dto = ReviewDto.from(review);
+        // Publish once the transaction commits so a brand-new review appears in
+        // already-open restaurant pages without a reload (same live mechanism
+        // that already delivers comment.created).
+        liveEventPublisher.afterCommit(restaurant.getId(), "review.created", new ReviewCreatedEvent(restaurant.getId(), dto));
+        return dto;
     }
 
     @Transactional

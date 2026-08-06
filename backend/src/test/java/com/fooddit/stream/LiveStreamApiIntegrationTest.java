@@ -189,6 +189,22 @@ class LiveStreamApiIntegrationTest {
         assertThat(leaked).isFalse();
     }
 
+    @Test
+    void subscriberReceivesReviewCreatedEvent() throws Exception {
+        Token token = signup(uniqueEmail());
+        String restaurantId = firstRestaurantId();
+
+        BufferedReader stream = openStream(restaurantId);
+
+        String reviewId = createReview(token, restaurantId, "brand new live review");
+        String frame = awaitData(stream, reviewId);
+        assertThat(frame).contains(reviewId);
+        assertThat(frame).contains("\"rating\":5");
+        assertThat(frame).contains("\"content\":\"brand new live review\"");
+
+        stream.close();
+    }
+
     private static String uniqueEmail() {
         return "stream-" + UUID.randomUUID() + "@example.com";
     }

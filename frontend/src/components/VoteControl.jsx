@@ -85,19 +85,20 @@ export default function VoteControl({ votableType, votableId, initialScore, init
   const scoreClass =
     myVote === 1 ? 'text-accent' : myVote === -1 ? 'text-down' : 'text-ink'
   const scoreSize = size === 'sm' ? 'text-sm' : 'text-base'
+  const padClass = size === 'sm' ? 'p-4' : 'p-3.5'
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center">
       <button
         type="button"
         onClick={() => handleVote(1)}
         disabled={busy}
         aria-label="Upvote"
-        className={`${upClass} transition duration-150 ease-out active:scale-75 disabled:opacity-50`}
+        className={`-m-2 flex items-center justify-center rounded-full ${padClass} ${upClass} transition duration-150 ease-out active:scale-75 disabled:opacity-50`}
       >
         <Arrow direction="up" active={myVote === 1} />
       </button>
-      <span key={score} className={`${scoreSize} animate-score-in font-semibold leading-none tabular-nums ${scoreClass}`}>
+      <span key={score} className={`${scoreSize} animate-score-in my-1.5 font-semibold leading-none tabular-nums ${scoreClass}`}>
         {score}
       </span>
       <button
@@ -105,7 +106,7 @@ export default function VoteControl({ votableType, votableId, initialScore, init
         onClick={() => handleVote(-1)}
         disabled={busy}
         aria-label="Downvote"
-        className={`${downClass} transition duration-150 ease-out active:scale-75 disabled:opacity-50`}
+        className={`-m-2 flex items-center justify-center rounded-full ${padClass} ${downClass} transition duration-150 ease-out active:scale-75 disabled:opacity-50`}
       >
         <Arrow direction="down" active={myVote === -1} />
       </button>

@@ -55,7 +55,7 @@ export default function ReviewCard({ review, onUpdated }) {
           initialMyVote={review.myVote}
         />
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 break-words">
           <header className="flex flex-wrap items-center gap-2 text-sm">
             <Link
               to={`/users/${review.author.id}`}
@@ -71,7 +71,7 @@ export default function ReviewCard({ review, onUpdated }) {
                 <button
                   type="button"
                   onClick={startEdit}
-                  className="text-xs font-medium text-muted transition-colors duration-150 hover:text-accent"
+                  className="-mx-1 -my-2 rounded px-2 py-2 text-xs font-medium text-muted transition-colors duration-150 hover:text-accent"
                 >
                   Edit
                 </button>
@@ -111,7 +111,7 @@ export default function ReviewCard({ review, onUpdated }) {
               </div>
             </div>
           ) : (
-            <p className="mt-2 whitespace-pre-wrap text-base leading-relaxed text-ink/85">
+            <p className="mt-2 break-words whitespace-pre-wrap text-base leading-relaxed text-ink/85">
               {review.content}
             </p>
           )}

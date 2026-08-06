@@ -223,7 +223,7 @@ export default function UserProfilePage() {
                                     <span className="text-xs italic text-muted">(edited)</span>
                                   )}
                                 </header>
-                                <p className="mt-2 whitespace-pre-wrap text-sm text-ink/85">
+                                <p className="mt-2 break-words whitespace-pre-wrap text-sm text-ink/85">
                                   {comment.content}
                                 </p>
                                 <p className="mt-2 line-clamp-2 border-l-2 border-line pl-3 text-xs italic text-muted">
@@ -277,7 +277,7 @@ export default function UserProfilePage() {
                                     <span className="text-xs italic text-muted">(edited)</span>
                                   )}
                                 </header>
-                                <p className="mt-2 whitespace-pre-wrap text-base leading-relaxed text-ink/85">
+                                <p className="mt-2 break-words whitespace-pre-wrap text-base leading-relaxed text-ink/85">
                                   {review.content}
                                 </p>
                               </div>

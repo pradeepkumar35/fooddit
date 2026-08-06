@@ -105,3 +105,75 @@ describe('CommentNode', () => {
     expect(onToggleReply).toHaveBeenCalledWith('c1')
   })
 })
+
+describe('CommentNode threading indentation', () => {
+  beforeEach(() => {
+    deleteComment.mockReset().mockResolvedValue({ deleted: true })
+    updateComment.mockReset().mockResolvedValue({})
+    useAuth.mockReturnValue({ isAuthenticated: true, user: { id: 'me' } })
+  })
+
+  it('adds one fixed thread-indent step per level up to the mobile cap', () => {
+    const shallow = renderNode(baseComment(), { depth: 2 })
+    expect(shallow.container.firstChild.style.paddingLeft).toBe('calc(1 * var(--thread-indent))')
+
+    const atCap = renderNode(baseComment(), { depth: 5 })
+    expect(atCap.container.firstChild.style.paddingLeft).toBe('calc(1 * var(--thread-indent))')
+
+    const capped = renderNode(baseComment(), { depth: 6 })
+    expect(capped.container.firstChild.style.paddingLeft).toBe('calc(0 * var(--thread-indent))')
+  })
+
+  it('uses a deeper cap on desktop', () => {
+    const at8 = renderNode(baseComment(), { depth: 8, isDesktop: true })
+    expect(at8.container.firstChild.style.paddingLeft).toBe('calc(1 * var(--thread-indent))')
+
+    const cappedAt9 = renderNode(baseComment(), { depth: 9, isDesktop: true })
+    expect(cappedAt9.container.firstChild.style.paddingLeft).toBe('calc(0 * var(--thread-indent))')
+  })
+
+  it('draws the connector line only under comments that have replies', () => {
+    const withReplies = renderNode(baseComment({ replies: [baseComment({ id: 'r1' })] }))
+    expect(withReplies.container.firstChild.querySelector('.bg-line')).not.toBeNull()
+
+    const leaf = renderNode(baseComment())
+    expect(leaf.container.firstChild.querySelector('.bg-line')).toBeNull()
+  })
+
+  it('renders comment text with overflow-wrap so long tokens cannot overflow', () => {
+    renderNode(baseComment({ content: 'https://example.com/' + 'a'.repeat(60) }))
+    expect(screen.getByText(new RegExp('^https://'))).toHaveClass('break-words')
+  })
+
+  it('auto-collapses deep subtrees on mobile and lets the user expand them', async () => {
+    const make = (level, id) => {
+      const node = baseComment({ id, content: `level ${level}` })
+      if (level < 7) node.replies = [make(level + 1, `n${level}`)]
+      return node
+    }
+    renderNode(make(0, 'root'))
+
+    // Nodes at depth >= 4 that have replies start collapsed (3 of them here).
+    expect(screen.getAllByRole('button', { name: 'Expand replies' })).toHaveLength(3)
+    expect(screen.getAllByRole('button', { name: 'Collapse replies' })).toHaveLength(5)
+
+    // Expanding every collapsed node flips them open (nothing left collapsed).
+    const expandButtons = screen.getAllByRole('button', { name: 'Expand replies' })
+    for (const button of expandButtons) {
+      await userEvent.click(button)
+    }
+    expect(screen.queryByRole('button', { name: 'Expand replies' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Collapse replies' })).toHaveLength(8)
+  })
+
+  it('does not auto-collapse deep subtrees on desktop', () => {
+    const make = (level, id) => {
+      const node = baseComment({ id, content: `level ${level}` })
+      if (level < 7) node.replies = [make(level + 1, `n${level}`)]
+      return node
+    }
+    renderNode(make(0, 'root'), { isDesktop: true })
+    expect(screen.queryByRole('button', { name: 'Expand replies' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Collapse replies' })).toHaveLength(8)
+  })
+})

@@ -35,6 +35,21 @@ describe('ReviewForm', () => {
     )
   })
 
+  it('keeps the max-length validation but hides the visible character counter', async () => {
+    const user = userEvent.setup()
+
+    render(<ReviewForm restaurantId="r1" />)
+    const textarea = screen.getByPlaceholderText(/what did you eat/i)
+    expect(textarea).toHaveAttribute('maxlength', '2000')
+
+    await user.type(textarea, 'Large but still validated')
+
+    // No `/2000` (or any) character counter should be rendered.
+    expect(screen.queryByText(/\/2000/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/characters/)).not.toBeInTheDocument()
+    expect(textarea).toHaveAttribute('maxlength', '2000')
+  })
+
   it('shows the specific content error instead of the generic "Validation failed" summary', async () => {
     const user = userEvent.setup()
     createReview.mockRejectedValue(VALIDATION_ERROR)

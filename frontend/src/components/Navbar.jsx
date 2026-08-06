@@ -181,10 +181,10 @@ export default function Navbar() {
           to="/"
           className="flex items-center gap-2 font-display text-2xl font-semibold text-ink transition-colors duration-150 hover:text-accent"
         >
-          <svg viewBox="0 0 24 24" className="h-6 w-6 text-accent" fill="currentColor" aria-hidden="true">
+          <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-accent" fill="currentColor" aria-hidden="true">
             <path d="M12 2a5 5 0 0 0-5 5c0 2.2 1.3 4 3 4.7V14H8a2 2 0 0 0-2 2v1H4a1 1 0 0 0 0 2h2v2a1 1 0 0 0 2 0v-2h2v2a1 1 0 0 0 2 0v-6.3c1.7-.7 3-2.5 3-4.7a5 5 0 0 0-5-5z" />
           </svg>
-          Fooddit
+          <span className="hidden sm:inline">Fooddit</span>
         </Link>
 
         <LocationBar />

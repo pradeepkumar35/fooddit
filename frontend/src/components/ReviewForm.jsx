@@ -63,7 +63,7 @@ export default function ReviewForm({ restaurantId, onCreated }) {
               onClick={() => setRating(value)}
               onMouseEnter={() => setHoverRating(value)}
               aria-label={`${value} stars`}
-              className={`text-2xl leading-none transition duration-150 ease-out hover:scale-110 active:scale-90 ${
+              className={`-m-1 rounded p-1 text-2xl leading-none transition duration-150 ease-out hover:scale-110 active:scale-90 ${
                 value <= displayed ? 'text-basil-500' : 'text-ink-300 hover:text-basil-600'
               }`}
             >
@@ -89,7 +89,6 @@ export default function ReviewForm({ restaurantId, onCreated }) {
           fieldErrors.content ? 'border-chili-500' : 'border-line'
         }`}
       />
-      <div className="mt-1 text-right text-xs text-muted">{content.length}/2000</div>
       {fieldErrors.content && (
         <p className="mt-1 text-xs font-medium text-chili-600">{fieldErrors.content}</p>
       )}

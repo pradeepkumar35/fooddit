@@ -8,6 +8,7 @@ import CommentNode from './CommentNode'
 import EmptyState from './EmptyState'
 import PillTabs from './PillTabs'
 import { CommentThreadSkeleton } from './Skeleton'
+import useIsDesktop from '../hooks/useIsDesktop'
 import { subscribe } from '../lib/live'
 
 const countNodes = (nodes) => nodes.reduce((total, node) => total + 1 + countNodes(node.replies), 0)
@@ -28,6 +29,7 @@ const SORT_OPTIONS = [
 export default function CommentThread({ reviewId }) {
   const { isAuthenticated } = useAuth()
   const notify = useToast()
+  const isDesktop = useIsDesktop()
   const [roots, setRoots] = useState(null)
   const [sort, setSort] = useState('best')
   const [error, setError] = useState('')
@@ -178,6 +180,7 @@ export default function CommentThread({ reviewId }) {
                 highlightId={newCommentId}
                 openReplyId={openReplyId}
                 onToggleReply={toggleReply}
+                isDesktop={isDesktop}
               />
             </li>
           ))}

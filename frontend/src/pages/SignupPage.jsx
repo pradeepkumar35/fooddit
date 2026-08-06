@@ -51,7 +51,7 @@ export default function SignupPage() {
 
   return (
     <div className="mx-auto mt-12 w-full max-w-md px-4">
-      <div className="rounded-lg border border-line bg-surface p-8 shadow-card">
+      <div className="rounded-lg border border-line bg-surface p-6 shadow-card sm:p-8">
         <h1 className="font-display text-2xl font-semibold text-ink">Create your account</h1>
         <p className="mb-6 mt-1 text-sm text-muted">
           Join Fooddit to review and discuss restaurants.

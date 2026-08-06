@@ -79,7 +79,7 @@ export default function RestaurantCard({ restaurant, onSavedChange }) {
             disabled={busy}
             aria-label={saved ? 'Remove from saved' : 'Save restaurant'}
             aria-pressed={saved}
-            className={`shrink-0 rounded-lg p-1 transition duration-150 ease-out active:scale-75 disabled:opacity-50 ${
+            className={`-m-1 shrink-0 rounded-lg p-2 transition duration-150 ease-out active:scale-75 disabled:opacity-50 ${
               saved ? 'text-accent' : 'text-muted hover:text-accent'
             }`}
           >
