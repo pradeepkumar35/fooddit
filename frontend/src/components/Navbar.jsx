@@ -197,7 +197,7 @@ export default function Navbar() {
               <circle cx="14.5" cy="15.5" r="0.6" fill="currentColor" />
             </svg>
           </span>
-          <span className="font-display text-2xl uppercase tracking-wide text-ink transition-colors duration-150 group-hover:text-accent">
+          <span className="hidden font-display text-2xl uppercase tracking-wide text-ink transition-colors duration-150 group-hover:text-accent sm:inline">
             Fooddit
           </span>
         </Link>

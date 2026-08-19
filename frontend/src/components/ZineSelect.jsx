@@ -9,7 +9,7 @@ export default function ZineSelect({ className = '', children, ...props }) {
     <div className={`relative inline-block align-middle ${className}`}>
       <select
         {...props}
-        className="zine-select h-9 cursor-pointer appearance-none border-2 border-ink bg-surface pl-3 pr-9 text-xs font-bold uppercase tracking-wide text-ink shadow-card transition duration-150 hover:bg-accent-soft active:translate-x-0.5 active:translate-y-0.5 active:shadow-none focus:outline-none"
+        className="zine-select h-9 min-w-0 max-w-[10.5rem] cursor-pointer appearance-none border-2 border-ink bg-surface pl-3 pr-8 text-xs font-bold uppercase tracking-wide text-ink shadow-card transition duration-150 hover:bg-accent-soft active:translate-x-0.5 active:translate-y-0.5 active:shadow-none focus:outline-none sm:max-w-none"
       >
         {children}
       </select>
