@@ -86,6 +86,11 @@
     scroll-behavior: smooth;
   }
 
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-canvas font-sans text-ink;
   }

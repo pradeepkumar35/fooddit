@@ -177,7 +177,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-20 border-b-2 border-ink bg-surface">
-      <div className="mx-auto flex h-16 max-w-[1080px] items-center gap-3 px-4">
+      <div className="mx-auto flex h-16 max-w-[1080px] items-center gap-2 px-3 sm:gap-3 sm:px-4">
         <Link
           to="/"
           onMouseEnter={() => setLogoWiggle((n) => n + 1)}
@@ -279,16 +279,16 @@ export default function Navbar() {
             </div>
           </>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               to="/login"
-              className="hard-btn border-2 bg-surface px-3 py-2 text-sm text-ink hover:bg-canvas"
+              className="hard-btn whitespace-nowrap border-2 bg-surface px-2.5 py-1.5 text-xs text-ink hover:bg-canvas sm:px-3 sm:py-2 sm:text-sm"
             >
               Log in
             </Link>
             <Link
               to="/signup"
-              className="hard-btn border-2 bg-accent px-3 py-2 text-sm text-surface hover:bg-accent"
+              className="hard-btn whitespace-nowrap border-2 bg-accent px-2.5 py-1.5 text-xs text-surface hover:bg-accent sm:px-3 sm:py-2 sm:text-sm"
             >
               Sign up
             </Link>

@@ -14,7 +14,7 @@ export default function LocationBar() {
         type="button"
         onClick={() => setSwitcherOpen(true)}
         aria-label="Choose location"
-        className="group flex max-w-44 items-center gap-1.5 border-2 border-ink bg-surface px-2 py-1.5 text-sm text-ink shadow-card transition duration-150 hover:bg-accent-soft active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+        className="group flex max-w-32 items-center gap-1.5 border-2 border-ink bg-surface px-2 py-1.5 text-sm text-ink shadow-card transition duration-150 hover:bg-accent-soft active:translate-x-0.5 active:translate-y-0.5 active:shadow-none sm:max-w-44"
       >
         <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-accent transition-transform duration-150 group-hover:animate-wiggle" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
