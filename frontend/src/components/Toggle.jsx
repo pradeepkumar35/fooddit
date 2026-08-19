@@ -11,13 +11,13 @@ export default function Toggle({ checked, onChange, label }) {
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-150 active:scale-95 ${
-        checked ? 'border-accent bg-accent' : 'border-line bg-canvas'
+      className={`relative inline-flex h-7 w-11 shrink-0 items-center border-2 border-ink transition-colors duration-150 active:scale-95 ${
+        checked ? 'bg-up' : 'bg-canvas'
       }`}
     >
       <span
-        className={`inline-block h-5 w-5 rounded-full bg-surface shadow transition-transform duration-200 ease-out ${
-          checked ? 'translate-x-[22px]' : 'translate-x-[2px]'
+        className={`inline-block h-5 w-5 border-2 border-ink bg-surface shadow-card transition-transform duration-200 ease-out ${
+          checked ? 'translate-x-[18px]' : 'translate-x-[2px]'
         }`}
       />
     </button>

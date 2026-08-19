@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const fieldClass =
-    'w-full rounded-lg border border-line px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors duration-150 focus:border-accent'
+    'w-full border-2 border-ink bg-canvas px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none'
 
   const handleSendCode = async (event) => {
     event.preventDefault()
@@ -79,36 +79,37 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="mx-auto mt-12 w-full max-w-md px-4">
-      <div className="rounded-lg border border-line bg-surface p-6 shadow-card sm:p-8">
+      <div className="sticker relative p-6 sm:p-8">
+        <span className="tape" aria-hidden="true" />
         {step === 'done' ? (
           <>
-            <h1 className="font-display text-2xl font-semibold text-ink">Password updated</h1>
-            <p className="mb-6 mt-1 text-sm text-muted">
+            <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-ink">Password updated</h1>
+            <p className="mb-6 mt-1 text-sm font-semibold text-muted">
               Your password has been reset. You can now log in with your new password.
             </p>
             <Link
               to="/login"
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent py-2 text-sm font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-[0.98]"
+              className="hard-btn flex w-full items-center justify-center gap-2 border-2 bg-accent py-2 text-sm text-surface"
             >
               Log in
             </Link>
           </>
         ) : (
           <>
-            <h1 className="font-display text-2xl font-semibold text-ink">Reset your password</h1>
-            <p className="mb-6 mt-1 text-sm text-muted">
+            <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-ink">Reset your password</h1>
+            <p className="mb-6 mt-1 text-sm font-semibold text-muted">
               {step === 'email'
                 ? 'Enter your account email and we will send you a one-time code.'
                 : `Enter the 6-digit code sent to ${email} and choose a new password.`}
             </p>
 
             {error && (
-              <div className="mb-4 rounded-lg border border-chili-500/40 bg-surface px-3 py-2 text-sm text-chili-600">
+              <div className="mb-4 border-2 border-chili-500 bg-surface px-3 py-2 text-sm font-semibold text-chili-600 shadow-card">
                 {error}
               </div>
             )}
             {info && (
-              <div className="mb-4 rounded-lg border border-basil-500/40 bg-surface px-3 py-2 text-sm text-basil-600">
+              <div className="mb-4 border-2 border-basil-500 bg-surface px-3 py-2 text-sm font-semibold text-basil-600 shadow-card">
                 {info}
               </div>
             )}
@@ -116,7 +117,7 @@ export default function ForgotPasswordPage() {
             {step === 'email' ? (
               <form onSubmit={handleSendCode} className="space-y-4">
                 <div>
-                  <label htmlFor="reset-email" className="mb-1 block text-sm font-medium text-ink">
+                  <label htmlFor="reset-email" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
                     Email
                   </label>
                   <input
@@ -132,7 +133,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent py-2 text-sm font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="hard-btn flex w-full items-center justify-center gap-2 border-2 bg-accent py-2 text-sm text-surface disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting && <Spinner />}
                   {submitting ? 'Sending code…' : 'Send code'}
@@ -141,7 +142,7 @@ export default function ForgotPasswordPage() {
             ) : (
               <form onSubmit={handleReset} className="space-y-4">
                 <div>
-                  <label htmlFor="reset-otp" className="mb-1 block text-sm font-medium text-ink">
+                  <label htmlFor="reset-otp" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
                     One-time code
                   </label>
                   <input
@@ -156,7 +157,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="reset-password" className="mb-1 block text-sm font-medium text-ink">
+                  <label htmlFor="reset-password" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
                     New password
                   </label>
                   <input
@@ -171,7 +172,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="reset-confirm" className="mb-1 block text-sm font-medium text-ink">
+                  <label htmlFor="reset-confirm" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
                     Confirm new password
                   </label>
                   <input
@@ -188,18 +189,18 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent py-2 text-sm font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="hard-btn flex w-full items-center justify-center gap-2 border-2 bg-accent py-2 text-sm text-surface disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting && <Spinner />}
                   {submitting ? 'Resetting…' : 'Reset password'}
                 </button>
-                <p className="text-center text-sm text-muted">
+                <p className="text-center text-sm font-semibold text-muted">
                   Didn&apos;t get a code?{' '}
                   <button
                     type="button"
                     onClick={handleResend}
                     disabled={submitting}
-                    className="font-medium text-accent transition-colors duration-150 hover:underline"
+                    className="font-bold text-accent transition-colors duration-150 hover:underline"
                   >
                     Resend code
                   </button>
@@ -207,9 +208,9 @@ export default function ForgotPasswordPage() {
               </form>
             )}
 
-            <p className="mt-6 text-center text-sm text-muted">
+            <p className="mt-6 text-center text-sm font-semibold text-muted">
               Remembered it?{' '}
-              <Link to="/login" className="font-medium text-accent transition-colors duration-150 hover:underline">
+              <Link to="/login" className="font-bold text-accent transition-colors duration-150 hover:underline">
                 Log in
               </Link>
             </p>

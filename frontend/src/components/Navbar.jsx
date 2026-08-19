@@ -22,6 +22,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [suggestions, setSuggestions] = useState([])
   const [suggestionsOpen, setSuggestionsOpen] = useState(false)
+  const [logoWiggle, setLogoWiggle] = useState(0)
   const menuRef = useRef(null)
   const mobileInputRef = useRef(null)
   const searchTimerRef = useRef(null)
@@ -57,12 +58,12 @@ export default function Navbar() {
   }, [search, searchParams, applySearch])
 
   // Autocomplete: fetch city-scoped name suggestions while typing. Debounced to
-  // ~280ms, min two characters, aborting the in-flight request when the query
-  // changes or the effect cleans up.
+  // ~280ms, from a single character up, aborting the in-flight request when the
+  // query changes or the effect cleans up.
   useEffect(() => {
     const city = activeCity?.citySlug || ''
     const trimmed = search.trim()
-    if (!city || trimmed.length < 2) {
+    if (!city || trimmed.length < 1) {
       setSuggestions([])
       setSuggestionsOpen(false)
       return undefined
@@ -128,8 +129,8 @@ export default function Navbar() {
 
   const searchBox = (className = '') => (
     <form onSubmit={handleSearch} className={`relative ${className}`}>
-      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted">
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
+      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink">
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />
         </svg>
@@ -148,10 +149,10 @@ export default function Navbar() {
         placeholder="Search restaurants…"
         aria-label="Search restaurants"
         aria-expanded={suggestionsOpen}
-        className="w-full rounded-lg border border-line bg-canvas py-2 pl-8 pr-3 text-sm text-ink placeholder:text-muted"
+        className="w-full border-2 border-ink bg-canvas py-2 pl-9 pr-3 text-sm text-ink placeholder:text-muted transition-shadow duration-150 focus:shadow-card focus:outline-none"
       />
       {suggestionsOpen && suggestions.length > 0 && (
-        <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-line bg-surface py-1 shadow-card-hover">
+        <ul className="animate-pop-in absolute left-0 right-0 top-full z-30 mt-1.5 border-2 border-ink bg-surface shadow-card">
           {suggestions.map((suggestion) => (
             <li key={suggestion.id}>
               <button
@@ -160,11 +161,11 @@ export default function Navbar() {
                   event.preventDefault()
                   pickSuggestion(suggestion)
                 }}
-                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors duration-150 hover:bg-canvas"
+                className="flex w-full items-center justify-between gap-3 border-b border-ink/10 px-3 py-2.5 text-left text-sm transition-colors duration-100 last:border-b-0 hover:bg-accent-soft"
               >
-                <span className="min-w-0 flex-1 truncate text-ink">{suggestion.name}</span>
+                <span className="min-w-0 flex-1 truncate font-medium text-ink">{suggestion.name}</span>
                 {suggestion.locality && (
-                  <span className="shrink-0 text-xs text-muted">{suggestion.locality}</span>
+                  <span className="shrink-0 text-xs font-semibold text-muted">{suggestion.locality}</span>
                 )}
               </button>
             </li>
@@ -175,16 +176,30 @@ export default function Navbar() {
   )
 
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-[1080px] items-center gap-3 px-4">
+    <header className="sticky top-0 z-20 border-b-2 border-ink bg-surface">
+      <div className="mx-auto flex h-16 max-w-[1080px] items-center gap-3 px-4">
         <Link
           to="/"
-          className="flex items-center gap-2 font-display text-2xl font-semibold text-ink transition-colors duration-150 hover:text-accent"
+          onMouseEnter={() => setLogoWiggle((n) => n + 1)}
+          className="group flex shrink-0 items-center gap-2.5"
+          aria-label="Fooddit home"
         >
-          <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-accent" fill="currentColor" aria-hidden="true">
-            <path d="M12 2a5 5 0 0 0-5 5c0 2.2 1.3 4 3 4.7V14H8a2 2 0 0 0-2 2v1H4a1 1 0 0 0 0 2h2v2a1 1 0 0 0 2 0v-2h2v2a1 1 0 0 0 2 0v-6.3c1.7-.7 3-2.5 3-4.7a5 5 0 0 0-5-5z" />
-          </svg>
-          <span className="hidden sm:inline">Fooddit</span>
+          <span
+            key={logoWiggle}
+            className={`sticker grid h-10 w-10 place-items-center bg-accent text-surface transition-transform duration-150 group-hover:animate-wiggle ${
+              logoWiggle ? 'animate-wiggle' : ''
+            }`}
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 11h16l-1.5 8h-13z" />
+              <path d="M8 7h8l-1-2H9z" />
+              <circle cx="9.5" cy="15.5" r="0.6" fill="currentColor" />
+              <circle cx="14.5" cy="15.5" r="0.6" fill="currentColor" />
+            </svg>
+          </span>
+          <span className="font-display text-2xl uppercase tracking-wide text-ink transition-colors duration-150 group-hover:text-accent">
+            Fooddit
+          </span>
         </Link>
 
         <LocationBar />
@@ -196,9 +211,9 @@ export default function Navbar() {
           aria-label="Search"
           aria-expanded={mobileSearchOpen}
           onClick={() => setMobileSearchOpen((open) => !open)}
-          className="ml-auto rounded-lg p-2 text-muted transition-colors duration-150 hover:text-accent active:scale-90 md:hidden"
+          className="hard-btn ml-auto h-10 w-10 border-2 p-0 text-ink md:hidden"
         >
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.75">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5">
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-3.5-3.5" />
           </svg>
@@ -208,72 +223,72 @@ export default function Navbar() {
           <>
             <NotificationsDropdown />
             <div className="relative" ref={menuRef}>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              className="flex items-center gap-2 rounded-full p-1 pr-2 transition-colors duration-150 hover:bg-canvas active:scale-95"
-              aria-expanded={menuOpen}
-              aria-haspopup="menu"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-semibold text-surface">
-                {user.name.charAt(0).toUpperCase()}
-              </span>
-              <span className="hidden text-sm font-medium text-ink sm:inline">{user.name}</span>
-            </button>
-
-            {menuOpen && (
-              <div
-                role="menu"
-                className="animate-fade-slide-in absolute right-0 top-full z-10 mt-2 w-48 origin-top-right overflow-hidden rounded-lg border border-line bg-surface shadow-card-hover"
+              <button
+                type="button"
+                onClick={() => setMenuOpen((open) => !open)}
+                className="flex items-center gap-2 border-2 border-ink bg-surface px-1.5 py-1 shadow-card transition duration-150 hover:bg-accent-soft active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
               >
-                <Link
-                  to="/profile"
-                  role="menuitem"
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-3 text-sm text-ink transition-colors duration-150 hover:bg-canvas"
+                <span className="sticker grid h-8 w-8 -rotate-2 place-items-center bg-accent text-sm font-bold text-surface">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+                <span className="hidden text-sm font-semibold text-ink sm:inline">{user.name}</span>
+              </button>
+
+              {menuOpen && (
+                <div
+                  role="menu"
+                  className="animate-pop-in absolute right-0 top-full z-10 mt-2 w-48 border-2 border-ink bg-surface shadow-card"
                 >
-                  My profile
-                </Link>
-                <Link
-                  to="/profile?tab=saved"
-                  role="menuitem"
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-3 text-sm text-ink transition-colors duration-150 hover:bg-canvas"
-                >
-                  Saved restaurants
-                </Link>
-                <Link
-                  to="/settings"
-                  role="menuitem"
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-3 text-sm text-ink transition-colors duration-150 hover:bg-canvas"
-                >
-                  Settings
-                </Link>
-                <div role="separator" className="border-t border-line" />
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={handleLogout}
-                  className="block w-full px-4 py-3 text-left text-sm text-ink transition-colors duration-150 hover:bg-canvas"
-                >
-                  Log out
-                </button>
-              </div>
-            )}
-          </div>
+                  <Link
+                    to="/profile"
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                    className="block border-b border-ink/10 px-4 py-3 text-sm font-medium text-ink transition-colors duration-100 hover:bg-accent-soft"
+                  >
+                    My profile
+                  </Link>
+                  <Link
+                    to="/profile?tab=saved"
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                    className="block border-b border-ink/10 px-4 py-3 text-sm font-medium text-ink transition-colors duration-100 hover:bg-accent-soft"
+                  >
+                    Saved restaurants
+                  </Link>
+                  <Link
+                    to="/settings"
+                    role="menuitem"
+                    onClick={() => setMenuOpen(false)}
+                    className="block border-b border-ink/10 px-4 py-3 text-sm font-medium text-ink transition-colors duration-100 hover:bg-accent-soft"
+                  >
+                    Settings
+                  </Link>
+                  <div role="separator" className="border-t-2 border-ink" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLogout}
+                    className="block w-full px-4 py-3 text-left text-sm font-medium text-ink transition-colors duration-100 hover:bg-accent-soft"
+                  >
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         ) : (
           <div className="flex items-center gap-2">
             <Link
               to="/login"
-              className="rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink transition-colors duration-150 hover:border-accent hover:text-accent"
+              className="hard-btn border-2 bg-surface px-3 py-2 text-sm text-ink hover:bg-canvas"
             >
               Log in
             </Link>
             <Link
               to="/signup"
-              className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-95"
+              className="hard-btn border-2 bg-accent px-3 py-2 text-sm text-surface hover:bg-accent"
             >
               Sign up
             </Link>
@@ -282,8 +297,25 @@ export default function Navbar() {
       </div>
 
       {mobileSearchOpen && (
-        <div className="animate-fade-slide-in border-t border-line px-4 py-2 md:hidden">{searchBox()}</div>
+        <div className="animate-fade-slide-in border-t-2 border-ink px-4 py-2 md:hidden">{searchBox()}</div>
       )}
+
+      <div className="overflow-hidden border-t-2 border-ink bg-ink text-canvas">
+        <div className="marquee-track flex whitespace-nowrap py-1 text-[11px] font-semibold uppercase tracking-[0.18em]">
+          <span className="flex min-w-full shrink-0 items-center justify-around gap-8">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <span key={i} className="flex items-center gap-8">
+                <span>Hot &amp; fresh reviews</span>
+                <span className="text-accent">●</span>
+                <span>Yours truly</span>
+                <span className="text-accent">●</span>
+                <span>Food that talks</span>
+                <span className="text-accent">●</span>
+              </span>
+            ))}
+          </span>
+        </div>
+      </div>
     </header>
   )
 }

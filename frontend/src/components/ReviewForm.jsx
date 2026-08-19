@@ -51,8 +51,9 @@ export default function ReviewForm({ restaurantId, onCreated }) {
   const displayed = hoverRating || rating
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-surface p-4 shadow-card">
-      <h2 className="font-display text-lg font-semibold text-ink">Write a review</h2>
+    <form onSubmit={handleSubmit} className="sticker relative p-4">
+      <span className="tape" aria-hidden="true" />
+      <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-ink">Write a review</h2>
 
       <div className="mt-3 flex items-center gap-2">
         <div className="flex" onMouseLeave={() => setHoverRating(0)}>
@@ -63,7 +64,7 @@ export default function ReviewForm({ restaurantId, onCreated }) {
               onClick={() => setRating(value)}
               onMouseEnter={() => setHoverRating(value)}
               aria-label={`${value} stars`}
-              className={`-m-1 rounded p-1 text-2xl leading-none transition duration-150 ease-out hover:scale-110 active:scale-90 ${
+              className={`-m-1 rounded p-1 text-3xl leading-none transition duration-150 ease-out hover:scale-110 active:scale-90 ${
                 value <= displayed ? 'text-basil-500' : 'text-ink-300 hover:text-basil-600'
               }`}
             >
@@ -71,12 +72,12 @@ export default function ReviewForm({ restaurantId, onCreated }) {
             </button>
           ))}
         </div>
-        <span className="text-sm text-muted">
+        <span className="text-sm font-semibold text-muted">
           {rating > 0 ? STAR_LABELS[rating] : 'Select a rating'}
         </span>
       </div>
       {fieldErrors.rating && (
-        <p className="mt-1 text-xs font-medium text-chili-600">{fieldErrors.rating}</p>
+        <p className="mt-1 text-xs font-semibold text-chili-600">{fieldErrors.rating}</p>
       )}
 
       <textarea
@@ -85,16 +86,16 @@ export default function ReviewForm({ restaurantId, onCreated }) {
         maxLength={2000}
         rows={4}
         placeholder="What did you eat? How was the service? Would you go back?"
-        className={`mt-3 w-full rounded-lg border px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors duration-150 focus:border-accent ${
-          fieldErrors.content ? 'border-chili-500' : 'border-line'
+        className={`mt-3 w-full resize-y border-2 bg-canvas px-3 py-2 font-serif text-base leading-relaxed text-ink placeholder:text-muted focus:outline-none ${
+          fieldErrors.content ? 'border-chili-500' : 'border-ink focus:border-accent'
         }`}
       />
       {fieldErrors.content && (
-        <p className="mt-1 text-xs font-medium text-chili-600">{fieldErrors.content}</p>
+        <p className="mt-1 text-xs font-semibold text-chili-600">{fieldErrors.content}</p>
       )}
 
       {error && (
-        <div className="animate-fade-slide-in mt-2 rounded-lg border border-chili-500/40 bg-surface px-3 py-2 text-sm text-chili-600">
+        <div className="animate-fade-slide-in mt-2 border-2 border-chili-500 bg-surface px-3 py-2 text-sm font-semibold text-chili-600 shadow-card">
           {error}
         </div>
       )}
@@ -102,7 +103,7 @@ export default function ReviewForm({ restaurantId, onCreated }) {
       <button
         type="submit"
         disabled={submitting}
-        className="mt-3 flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+        className="hard-btn mt-3 border-2 bg-accent px-4 py-2 text-sm text-surface disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting && <Spinner />}
         {submitting ? 'Submitting…' : 'Post review'}

@@ -86,9 +86,9 @@ export default function RestaurantDetailPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-[1080px] space-y-4 px-4 pb-16 pt-6">
-        <div className="mx-auto max-w-[640px] space-y-4">
-          <Skeleton className="h-32 rounded-lg" />
-          <Skeleton className="h-36 rounded-lg" />
+        <div className="mx-auto max-w-[680px] space-y-4">
+          <Skeleton className="h-40 border-2 border-ink" />
+          <Skeleton className="h-40 border-2 border-ink" />
           <RestaurantCardSkeleton />
           <RestaurantCardSkeleton />
         </div>
@@ -99,9 +99,11 @@ export default function RestaurantDetailPage() {
   if (notFound || !restaurant) {
     return (
       <div className="py-16 text-center">
-        <h1 className="font-display text-2xl font-semibold text-ink">Restaurant not found</h1>
-        <p className="mt-2 text-sm text-muted">
-          <Link to="/" className="font-medium text-accent hover:underline">
+        <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-ink">
+          Restaurant not found
+        </h1>
+        <p className="mt-2 text-sm font-semibold text-muted">
+          <Link to="/" className="font-bold text-accent hover:underline">
             Back to all restaurants
           </Link>
         </p>
@@ -113,19 +115,25 @@ export default function RestaurantDetailPage() {
     <div className="mx-auto max-w-[1080px] px-4 pb-16 pt-6">
       <div className="flex gap-6">
         <main className="min-w-0 flex-1">
-          <div className="mx-auto max-w-[640px]">
-            <Link to="/" className="text-sm text-muted transition-colors duration-150 hover:text-accent">
+          <div className="mx-auto max-w-[680px]">
+            <Link
+              to="/"
+              className="hard-btn border-2 bg-surface px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-ink hover:bg-canvas"
+            >
               ← All restaurants
             </Link>
 
-            <header className="mt-3 rounded-lg border border-line bg-surface p-6 shadow-card">
+            <header className="sticker relative mt-3 p-6">
+              <span className="tape" aria-hidden="true" />
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h1 className="font-display text-2xl font-semibold leading-tight text-ink">
+                  <h1 className="font-display text-4xl font-semibold uppercase leading-tight tracking-wide text-ink">
                     {restaurant.name}
                   </h1>
-                  <p className="mt-1 text-sm text-muted">{restaurant.address}</p>
-                  <p className="mt-2 text-xs text-muted">{restaurant.cuisineType}</p>
+                  <p className="mt-2 text-sm font-semibold text-muted">📍 {restaurant.address}</p>
+                  <p className="mt-2 inline-block border-2 border-ink bg-surface px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-ink shadow-card">
+                    {restaurant.cuisineType}
+                  </p>
                 </div>
                 <div className="flex flex-col items-end gap-3">
                   <div className="text-right">
@@ -133,17 +141,17 @@ export default function RestaurantDetailPage() {
                       <>
                         <div className="flex items-center justify-end gap-2">
                           <RatingStars value={restaurant.avgRating} className="text-lg" />
-                          <span className="font-display text-2xl font-semibold text-ink">
+                          <span className="font-display text-4xl font-semibold text-ink tabular-nums">
                             {restaurant.avgRating.toFixed(1)}
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-muted">
+                        <p className="mt-1 text-xs font-semibold text-muted">
                           {restaurant.reviewCount}{' '}
                           {restaurant.reviewCount === 1 ? 'review' : 'reviews'}
                         </p>
                       </>
                     ) : (
-                      <p className="text-sm text-muted">No reviews yet</p>
+                      <p className="text-sm font-semibold text-muted">No reviews yet</p>
                     )}
                   </div>
                   <button
@@ -151,16 +159,14 @@ export default function RestaurantDetailPage() {
                     onClick={handleSave}
                     disabled={saving}
                     aria-pressed={restaurant.saved}
-                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition duration-150 ease-out active:scale-[0.97] disabled:opacity-60 ${
-                      restaurant.saved
-                        ? 'border-accent bg-accent text-surface'
-                        : 'border-line text-muted hover:border-accent hover:text-accent'
+                    className={`hard-btn border-2 px-3 py-2 text-sm ${
+                      restaurant.saved ? 'bg-up text-surface' : 'bg-surface text-ink hover:bg-up-soft hover:text-up'
                     }`}
                   >
                     <svg
                       key={pop}
                       viewBox="0 0 24 24"
-                      className={`h-4 w-4 ${pop > 0 ? 'animate-save-pop' : ''}`}
+                      className={`mr-1 inline h-4 w-4 ${pop > 0 ? 'animate-save-pop' : ''}`}
                       fill={restaurant.saved ? 'currentColor' : 'none'}
                       stroke="currentColor"
                       strokeWidth="1.75"
@@ -176,7 +182,7 @@ export default function RestaurantDetailPage() {
             </header>
 
             {error && (
-              <div className="mt-4 rounded-lg border border-chili-500/40 bg-surface px-4 py-3 text-sm text-chili-600">
+              <div className="mt-4 border-2 border-chili-500 bg-surface px-4 py-3 text-sm font-semibold text-chili-600 shadow-card">
                 {error}
               </div>
             )}
@@ -184,15 +190,17 @@ export default function RestaurantDetailPage() {
             <section className="mt-4">
               {isAuthenticated ? (
                 alreadyReviewed ? (
-                  <p className="rounded-lg border border-line bg-surface px-4 py-3 text-sm text-muted shadow-card">
+                  <p className="sticker relative px-4 py-3 text-sm font-semibold text-muted">
+                    <span className="tape" aria-hidden="true" />
                     You've already reviewed this restaurant.
                   </p>
                 ) : (
                   <ReviewForm restaurantId={id} onCreated={loadData} />
                 )
               ) : (
-                <p className="rounded-lg border border-line bg-surface px-4 py-3 text-sm text-muted shadow-card">
-                  <Link to="/login" className="font-medium text-accent hover:underline">
+                <p className="sticker relative px-4 py-3 text-sm font-semibold text-muted">
+                  <span className="tape" aria-hidden="true" />
+                  <Link to="/login" className="font-bold text-accent hover:underline">
                     Log in
                   </Link>{' '}
                   to write a review.
@@ -201,7 +209,9 @@ export default function RestaurantDetailPage() {
             </section>
 
             <section className="mt-6">
-              <h2 className="mb-3 font-display text-lg font-semibold text-ink">Reviews</h2>
+              <h2 className="mb-3 sticker inline-block px-3 py-1.5 font-display text-base font-semibold uppercase tracking-wide text-ink">
+                Reviews
+              </h2>
               {reviews.length === 0 ? (
                 <EmptyState
                   title="No reviews yet"
@@ -211,9 +221,9 @@ export default function RestaurantDetailPage() {
                   }
                 />
               ) : (
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   {reviews.map((review) => (
-                    <li key={review.id}>
+                    <li key={review.id} className="animate-fade-slide-in stagger-fill">
                       <ReviewCard review={review} onUpdated={loadData} />
                     </li>
                   ))}
@@ -224,17 +234,20 @@ export default function RestaurantDetailPage() {
         </main>
 
         <aside className="hidden w-72 shrink-0 lg:block">
-          <div className="sticky top-20 space-y-4">
-            <div className="rounded-lg border border-line bg-surface p-4 shadow-card">
-              <h2 className="font-display text-base font-semibold text-ink">About this place</h2>
+          <div className="sticky top-24 space-y-4">
+            <div className="sticker relative p-4">
+              <span className="tape" aria-hidden="true" />
+              <h2 className="font-display text-base font-semibold uppercase tracking-wide text-ink">
+                About this place
+              </h2>
               <dl className="mt-2 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-muted">Cuisine</dt>
-                  <dd className="font-medium text-ink">{restaurant.cuisineType}</dd>
+                  <dt className="font-semibold text-muted">Cuisine</dt>
+                  <dd className="font-bold text-ink">{restaurant.cuisineType}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted">Average</dt>
-                  <dd className="font-medium text-ink">{restaurant.avgRating.toFixed(1)} / 5</dd>
+                  <dt className="font-semibold text-muted">Average</dt>
+                  <dd className="font-bold text-ink">{restaurant.avgRating.toFixed(1)} / 5</dd>
                 </div>
               </dl>
             </div>

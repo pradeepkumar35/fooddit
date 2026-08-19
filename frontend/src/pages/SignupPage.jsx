@@ -45,27 +45,28 @@ export default function SignupPage() {
   }
 
   const fieldClass = (name) =>
-    `w-full rounded-lg border px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors duration-150 focus:border-accent ${
-      fieldErrors[name] ? 'border-chili-500' : 'border-line'
+    `w-full border-2 px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none ${
+      fieldErrors[name] ? 'border-chili-500 bg-surface' : 'border-ink bg-canvas focus:border-accent'
     }`
 
   return (
     <div className="mx-auto mt-12 w-full max-w-md px-4">
-      <div className="rounded-lg border border-line bg-surface p-6 shadow-card sm:p-8">
-        <h1 className="font-display text-2xl font-semibold text-ink">Create your account</h1>
-        <p className="mb-6 mt-1 text-sm text-muted">
+      <div className="sticker relative p-6 sm:p-8">
+        <span className="tape" aria-hidden="true" />
+        <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-ink">Create your account</h1>
+        <p className="mb-6 mt-1 text-sm font-semibold text-muted">
           Join Fooddit to review and discuss restaurants.
         </p>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-chili-500/40 bg-surface px-3 py-2 text-sm text-chili-600">
+          <div className="mb-4 border-2 border-chili-500 bg-surface px-3 py-2 text-sm font-semibold text-chili-600 shadow-card">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="name" className="mb-1 block text-sm font-medium text-ink">
+            <label htmlFor="name" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
               Name
             </label>
             <input
@@ -77,11 +78,11 @@ export default function SignupPage() {
               className={fieldClass('name')}
               placeholder="Jane Foodie"
             />
-            {fieldErrors.name && <p className="mt-1 text-xs text-chili-600">{fieldErrors.name}</p>}
+            {fieldErrors.name && <p className="mt-1 text-xs font-semibold text-chili-600">{fieldErrors.name}</p>}
           </div>
 
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-ink">
+            <label htmlFor="email" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
               Email
             </label>
             <input
@@ -93,11 +94,11 @@ export default function SignupPage() {
               className={fieldClass('email')}
               placeholder="you@example.com"
             />
-            {fieldErrors.email && <p className="mt-1 text-xs text-chili-600">{fieldErrors.email}</p>}
+            {fieldErrors.email && <p className="mt-1 text-xs font-semibold text-chili-600">{fieldErrors.email}</p>}
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-ink">
+            <label htmlFor="password" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
               Password
             </label>
             <input
@@ -111,23 +112,23 @@ export default function SignupPage() {
               placeholder="At least 8 characters"
             />
             {fieldErrors.password && (
-              <p className="mt-1 text-xs text-chili-600">{fieldErrors.password}</p>
+              <p className="mt-1 text-xs font-semibold text-chili-600">{fieldErrors.password}</p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent py-2 text-sm font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            className="hard-btn flex w-full items-center justify-center gap-2 border-2 bg-accent py-2 text-sm text-surface disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <Spinner />}
             {submitting ? 'Creating account…' : 'Sign up'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-muted">
+        <p className="mt-6 text-center text-sm font-semibold text-muted">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-accent transition-colors duration-150 hover:underline">
+          <Link to="/login" className="font-bold text-accent transition-colors duration-150 hover:underline">
             Log in
           </Link>
         </p>

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { listLocalities } from '../api/locations'
 import { listCuisines, listRestaurants } from '../api/restaurants'
 import EmptyState from '../components/EmptyState'
-import PillTabs from '../components/PillTabs'
 import RestaurantCard from '../components/RestaurantCard'
 import { RestaurantCardSkeleton } from '../components/Skeleton'
+import ZineSelect from '../components/ZineSelect'
 import { useLocation } from '../hooks/useLocation'
 
 const RATING_OPTIONS = [
@@ -19,18 +19,29 @@ const SORT_OPTIONS = [
   { value: 'mostdiscussed', label: 'Most discussed' },
 ]
 
-/**
- * Reddit-style feed: a centered ~640px column of restaurant cards plus a right
- * sidebar (desktop only) with an About card and a top-rated widget. The feed is
- * always scoped to a serviceable city (?city=city_slug, required) and can be
- * narrowed to a ?locality= within it. All filters live in the URL (?q=,
- * ?cuisine=, ?city=, ?locality=, ?rating=, ?sort=) so the navbar search and the
- * location switcher share state, filters survive navigation/refresh, and URLs
- * stay shareable. The URL is the single source of truth.
- */
+const CUISINE_STYLE = [
+  [/biryani|indian|rice|thali|north|south|punjabi|maha|curry/i, '#FF4D00', '🍛'],
+  [/burger|fast|street|snack|sandwich/i, '#E0A13C', '🍔'],
+  [/noodle|ramen|wok|chinese/i, '#5FA37A', '🍜'],
+  [/pizza|italian|pasta|conti/i, '#E8336B', '🍕'],
+  [/dessert|sweet|bakery|ice|cake/i, '#7A5CF0', '🍰'],
+  [/beverage|juice|cafe|coffee|tea|bar/i, '#1F5CFF', '🍹'],
+  [/seafood|coastal|fish/i, '#2E9E9B', '🥘'],
+]
+const DEFAULT_STYLE = ['#5A5347', '🍽️']
+function styleFor(cuisine = '') {
+  for (const [re, color, glyph] of CUISINE_STYLE) if (re.test(cuisine)) return { color, glyph }
+  return { color: DEFAULT_STYLE[0], glyph: DEFAULT_STYLE[1] }
+}
+function hash(str) {
+  let h = 0
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0
+  return h
+}
+
 export default function RestaurantListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const { activeCity, activeLocality, setActiveLocation, cities } = useLocation()
+  const { activeCity, activeLocality, setActiveLocation, setSwitcherOpen, cities } = useLocation()
   const [restaurants, setRestaurants] = useState([])
   const [cuisineOptions, setCuisineOptions] = useState([])
   const [localityOptions, setLocalityOptions] = useState([])
@@ -39,6 +50,7 @@ export default function RestaurantListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [shownParamsKey, setShownParamsKey] = useState('')
+  const [hoveredId, setHoveredId] = useState(null)
 
   const cuisine = searchParams.get('cuisine') || ''
   const urlCity = searchParams.get('city') || ''
@@ -46,8 +58,6 @@ export default function RestaurantListPage() {
   const rating = searchParams.get('rating') || ''
   const sort = searchParams.get('sort') || 'top'
 
-  // The URL is the source of truth; when it has no city yet, fall back to the
-  // active location (from the switcher / localStorage) and write it into the URL.
   const city = urlCity || activeCity?.citySlug || ''
 
   const setParam = (key, value) => {
@@ -61,7 +71,6 @@ export default function RestaurantListPage() {
     )
   }
 
-  // Persist the URL location into the context so the navbar bar stays in sync.
   useEffect(() => {
     if (!city) return
     const matched =
@@ -71,7 +80,6 @@ export default function RestaurantListPage() {
     }
   }, [city, locality, cities, activeCity, setActiveLocation])
 
-  // Once the active location is known and the URL has no city, backfill it.
   useEffect(() => {
     if (!urlCity && activeCity?.citySlug && city) {
       const next = new URLSearchParams(searchParams)
@@ -131,9 +139,6 @@ export default function RestaurantListPage() {
 
   const resultsKey = [searchParams.get('q') || '', cuisine, city, locality, rating, sort].join('|')
 
-  // On fresh results, advance the animation key so the list re-mounts with a
-  // staggered fade-in. Cards cascade in one-by-one (cheap single-layer opacity
-  // fade) instead of the whole list crossfading, which ghosts and stutters.
   useEffect(() => {
     if (!city) return
     let cancelled = false
@@ -156,9 +161,6 @@ export default function RestaurantListPage() {
     }
   }, [params, resultsKey, city])
 
-  const selectClass =
-    'h-8 rounded-lg border border-line bg-surface px-3 text-sm text-ink focus:outline-none'
-
   const handleCityChange = (slug) => {
     const next = new URLSearchParams(searchParams)
     next.set('city', slug)
@@ -168,164 +170,240 @@ export default function RestaurantListPage() {
 
   const selectedCity = cities.find((c) => c.citySlug === city) ?? cities.find((c) => c.cityName === city)
 
+  const pins = useMemo(() => {
+    const lats = restaurants.map((r) => Number(r.latitude)).filter(Number.isFinite)
+    const lngs = restaurants.map((r) => Number(r.longitude)).filter(Number.isFinite)
+    const minLat = Math.min(...lats)
+    const maxLat = Math.max(...lats)
+    const minLng = Math.min(...lngs)
+    const maxLng = Math.max(...lngs)
+    const spread = (v, min, max) => {
+      if (!Number.isFinite(v)) return null
+      const t = max === min ? 0.5 : (v - min) / (max - min)
+      return 14 + t * 72
+    }
+    return restaurants.map((r) => {
+      const x = spread(Number(r.longitude), minLng, maxLng)
+      const y = spread(Number(r.latitude), minLat, maxLat)
+      const { color, glyph } = styleFor(r.cuisineType || (r.cuisines && r.cuisines[0]) || '')
+      return {
+        ...r,
+        x: x ?? 12 + (hash(r.id) % 76),
+        y: y ?? 14 + ((hash(r.id) >> 4) % 72),
+        color,
+        glyph,
+        featured: topRated[0]?.id === r.id,
+      }
+    })
+  }, [restaurants, topRated])
+
   return (
-    <div className="mx-auto max-w-[1080px] px-4 pb-16 pt-6">
-      <div className="flex gap-6">
-        <main className="min-w-0 flex-1">
-          <div className="mx-auto max-w-[640px]">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <PillTabs options={SORT_OPTIONS} value={sort} onChange={(v) => setParam('sort', v)} />
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-6">
+      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        {/* ============ ZINE MAP PANE (left) ============ */}
+        <aside className="order-2 min-w-0 lg:order-1">
+          <div className="lg:sticky lg:top-24">
+            <button
+              type="button"
+              onClick={() => setSwitcherOpen(true)}
+              className="group mb-3 inline-flex items-center gap-2 border-2 border-ink bg-surface px-3 py-2 text-sm font-bold uppercase tracking-wide text-ink shadow-card transition duration-150 hover:bg-accent-soft active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+            >
+              <span className="transition-transform duration-200 group-hover:animate-wiggle">📍</span>
+              {selectedCity ? `${selectedCity.cityName}${locality ? ` · ${locality}` : ''}` : 'Choose location'}
+              <span className="text-muted">change</span>
+            </button>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={cuisine}
-                  onChange={(e) => setParam('cuisine', e.target.value)}
-                  className={selectClass}
-                  aria-label="Filter by cuisine"
-                >
-                  <option value="">All Cuisines</option>
-                  {cuisineOptions.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={city}
-                  onChange={(e) => handleCityChange(e.target.value)}
-                  className={selectClass}
-                  aria-label="Filter by city"
-                >
-                  {cities.map((c) => (
-                    <option key={c.citySlug} value={c.citySlug}>
-                      {c.cityName}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={locality}
-                  onChange={(e) => setParam('locality', e.target.value)}
-                  className={selectClass}
-                  aria-label="Filter by locality"
-                >
-                  <option value="">All Localities</option>
-                  {localityOptions.map((l) => (
-                    <option key={l} value={l}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={rating}
-                  onChange={(e) => setParam('rating', e.target.value)}
-                  className={selectClass}
-                  aria-label="Filter by rating"
-                >
-                  <option value="">All Ratings</option>
-                  {RATING_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <p className="mb-3 text-xs text-muted">
-              {loading ? 'Loading…' : `${restaurants.length} restaurant${restaurants.length === 1 ? '' : 's'}`}
-            </p>
-
-            {error && (
-              <div className="mb-4 rounded-lg border border-chili-500/40 bg-surface px-4 py-3 text-sm text-chili-600">
-                {error}
-              </div>
-            )}
-
-            {loading && restaurants.length === 0 ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <RestaurantCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : (
-              <div key={shownParamsKey}>
-                {restaurants.length === 0 ? (
-                  <div className="animate-fade-slide-in">
-                    <EmptyState
-                      title="No restaurants match your filters"
-                      description="Try removing a filter, or search for a different restaurant or cuisine."
-                      icon={
-                        <>
-                          <circle cx="11" cy="11" r="8" />
-                          <path d="m21 21-4.35-4.35" />
-                        </>
-                      }
-                    />
+            <div className="sticker relative -rotate-1 overflow-hidden p-0 lg:-rotate-[0.6deg]">
+              <span className="tape" aria-hidden="true" />
+              <div className="map-streets pointer-events-none absolute inset-0 opacity-70 dark:opacity-40" aria-hidden="true" />
+              <div
+                className="pointer-events-none absolute inset-0"
+                aria-hidden="true"
+                style={{
+                  background:
+                    'radial-gradient(circle at 78% 18%, rgba(255,77,0,0.12), transparent 40%), radial-gradient(circle at 22% 82%, rgba(31,92,255,0.10), transparent 40%)',
+                }}
+              />
+              <div className="relative aspect-[4/3] w-full">
+                {pins.length === 0 && (
+                  <div className="absolute inset-0 grid place-items-center px-6 text-center">
+                    <p className="text-sm font-bold text-muted">No restaurants to plot yet.</p>
                   </div>
-                ) : (
-                  <ul className="space-y-3">
-                    {restaurants.map((restaurant, index) => (
-                      <li
-                        key={restaurant.id}
-                        className="animate-fade-slide-in stagger-fill"
-                        style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
-                      >
-                        <RestaurantCard restaurant={restaurant} />
-                      </li>
-                    ))}
-                  </ul>
                 )}
-              </div>
-            )}
-          </div>
-        </main>
-
-        <aside className="hidden w-72 shrink-0 lg:block">
-          <div className="sticky top-20 space-y-4">
-            <div className="rounded-lg border border-line bg-surface p-4 shadow-card">
-              <h2 className="font-display text-base font-semibold text-ink">About Fooddit</h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                Restaurant reviews worth discussing. Rate what you ate, then join the threaded
-                conversation under each review.
-              </p>
-              {totalCount !== null && selectedCity && (
-                <p className="mt-3 text-xs text-muted">
-                  {totalCount} restaurants in {selectedCity.cityName}
-                </p>
-              )}
-            </div>
-
-            <div className="rounded-lg border border-line bg-surface p-4 shadow-card">
-              <h2 className="font-display text-base font-semibold text-ink">Top rated</h2>
-              <ul className="mt-3 space-y-2">
-                {topRated.map((restaurant, index) => (
-                  <li key={restaurant.id}>
-                    <Link
-                      to={`/restaurants/${restaurant.id}`}
-                      className="group flex items-baseline gap-3"
+                <div role="img" aria-label={`Map of restaurants in ${selectedCity?.cityName || 'your area'}`} className="h-full w-full">
+                  {pins.map((pin, i) => (
+                    <button
+                      key={pin.id}
+                      type="button"
+                      onMouseEnter={() => setHoveredId(pin.id)}
+                      onMouseLeave={() => setHoveredId(null)}
+                      aria-label={`${pin.name}, rating ${pin.avgRating.toFixed(1)}`}
+                      className="animate-pop-rotate group absolute z-10 flex -translate-x-1/2 -translate-y-full flex-col items-center gap-1 transition-transform duration-200 ease-out hover:scale-110"
+                      style={{ left: `${pin.x}%`, top: `${pin.y}%`, animationDelay: `${Math.min(i, 8) * 50}ms` }}
                     >
-                      <span className="font-display text-sm font-semibold tabular-nums text-muted group-hover:text-accent">
-                        {index + 1}
+                      <span
+                        className={`relative grid h-11 w-11 rotate-45 place-items-center rounded-[6px] border-2 border-ink shadow-card transition-transform duration-200 ${
+                          hoveredId === pin.id || pin.featured ? 'scale-110' : ''
+                        }`}
+                        style={{ background: pin.color }}
+                      >
+                        <span className="-rotate-45 text-lg">{pin.glyph}</span>
+                        {pin.featured && (
+                          <span className="absolute -inset-2 -z-10 animate-glow-pulse rounded-md" style={{ color: pin.color }} aria-hidden="true" />
+                        )}
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-sm text-ink group-hover:text-accent">
-                        {restaurant.name}
+                      <span className="border-2 border-ink bg-surface px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-ink shadow-card">
+                        {pin.avgRating.toFixed(1)}★
                       </span>
-                      <span className="text-xs tabular-nums text-muted">
-                        {restaurant.avgRating.toFixed(1)} ★
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/"
-                className="mt-3 block text-xs font-medium text-accent hover:underline"
-              >
-                Browse all →
-              </Link>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 border-t-2 border-ink bg-surface/95 px-3 py-2 backdrop-blur-sm">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
+                  {loading ? 'Loading…' : `${restaurants.length} plotted`}
+                </span>
+                <span className="ml-auto flex gap-1.5">
+                  {['Biryani', 'Noodle', 'Bakery', 'Seafood', 'Cafe'].slice(0, 4).map((c) => (
+                    <span key={c} className="h-2.5 w-2.5 rounded-sm border border-ink" style={{ background: styleFor(c).color }} aria-hidden="true" />
+                  ))}
+                </span>
+              </div>
             </div>
+
+            {totalCount !== null && selectedCity && (
+              <p className="mt-3 text-xs font-semibold text-muted">
+                {totalCount} restaurants across {selectedCity.cityName} — hover a card to find it on the map.
+              </p>
+            )}
           </div>
         </aside>
+
+        {/* ============ ZINE COLLAGE PANE (right) ============ */}
+        <main className="order-1 min-w-0 lg:order-2">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Sort reviews">
+              {SORT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={sort === opt.value}
+                  onClick={() => setParam('sort', opt.value)}
+                  className={`border-2 border-ink px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition duration-150 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none ${
+                    sort === opt.value
+                      ? 'bg-accent text-surface shadow-card'
+                      : 'bg-surface text-ink shadow-card hover:bg-accent-soft'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <ZineSelect
+                value={cuisine}
+                onChange={(e) => setParam('cuisine', e.target.value)}
+                aria-label="Filter by cuisine"
+              >
+                <option value="">All Cuisines</option>
+                {cuisineOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </ZineSelect>
+              <ZineSelect
+                value={city}
+                onChange={(e) => handleCityChange(e.target.value)}
+                aria-label="Filter by city"
+              >
+                {cities.map((c) => (
+                  <option key={c.citySlug} value={c.citySlug}>
+                    {c.cityName}
+                  </option>
+                ))}
+              </ZineSelect>
+              <ZineSelect
+                value={locality}
+                onChange={(e) => setParam('locality', e.target.value)}
+                aria-label="Filter by locality"
+              >
+                <option value="">All Localities</option>
+                {localityOptions.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </ZineSelect>
+              <ZineSelect
+                value={rating}
+                onChange={(e) => setParam('rating', e.target.value)}
+                aria-label="Filter by rating"
+              >
+                <option value="">All Ratings</option>
+                {RATING_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </ZineSelect>
+            </div>
+          </div>
+
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="border-2 border-ink bg-accent px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-surface shadow-card">
+              {loading ? 'Loading…' : `${restaurants.length} restaurant${restaurants.length === 1 ? '' : 's'}`}
+            </span>
+            {error && (
+              <span className="border-2 border-ink bg-chili-500 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-surface shadow-card">
+                {error}
+              </span>
+            )}
+          </div>
+
+          {loading && restaurants.length === 0 ? (
+            <div className="columns-1 gap-4 sm:columns-2">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="mb-4 break-inside-avoid">
+                  <RestaurantCardSkeleton />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div key={shownParamsKey}>
+              {restaurants.length === 0 ? (
+                <div className="animate-fade-slide-in">
+                  <EmptyState
+                    title="No restaurants match your filters"
+                    description="Try removing a filter, or search for a different restaurant or cuisine."
+                    icon={
+                      <>
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </>
+                    }
+                  />
+                </div>
+              ) : (
+                <div className="columns-1 gap-4 sm:columns-2">
+                  {restaurants.map((restaurant, index) => (
+                    <div
+                      key={restaurant.id}
+                      onMouseEnter={() => setHoveredId(restaurant.id)}
+                      onMouseLeave={() => setHoveredId(null)}
+                      className="animate-pop-rotate stagger-fill mb-4 break-inside-avoid"
+                      style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+                    >
+                      <RestaurantCard restaurant={restaurant} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </main>
       </div>
     </div>
   )

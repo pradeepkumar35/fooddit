@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useRef, useState } from 'react'
 const ToastContext = createContext(() => {})
 
 const ACCENTS = {
-  success: 'border-l-accent',
+  success: 'border-l-up',
   error: 'border-l-down',
   info: 'border-l-muted',
 }
@@ -46,7 +46,7 @@ export function ToastProvider({ children }) {
           <div
             key={toast.id}
             role="status"
-            className={`pointer-events-auto max-w-xs rounded-lg border border-line border-l-4 bg-surface px-4 py-3 text-sm text-ink shadow-card-hover ${
+            className={`pointer-events-auto max-w-xs border-2 border-ink border-l-4 bg-surface px-4 py-3 font-serif text-sm font-semibold leading-relaxed text-ink shadow-card-hover ${
               ACCENTS[toast.type] ?? ACCENTS.success
             } ${toast.leaving ? 'animate-toast-out' : 'animate-toast-in'}`}
           >

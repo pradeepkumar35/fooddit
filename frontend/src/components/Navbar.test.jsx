@@ -56,15 +56,15 @@ describe('Navbar restaurant autocomplete', () => {
     await waitFor(() => expect(screen.getByTestId('route')).toHaveTextContent('/restaurants/r1'))
   })
 
-  it('hides the dropdown when the query is too short to search', async () => {
+  it('shows suggestions even for a single-character query', async () => {
     suggestRestaurants.mockResolvedValue([{ id: 'r1', name: 'Biryani Diaries', locality: 'Bandra' }])
 
     renderNavbar()
 
     await userEvent.type(screen.getByLabelText('Search restaurants'), 'b')
 
-    await new Promise((resolve) => setTimeout(resolve, 350))
-    expect(suggestRestaurants).not.toHaveBeenCalled()
-    expect(screen.queryByText('Biryani Diaries')).not.toBeInTheDocument()
+    const suggestion = await screen.findByText('Biryani Diaries')
+    expect(suggestion).toBeInTheDocument()
+    expect(suggestRestaurants).toHaveBeenCalledWith('mumbai', 'b', expect.anything())
   })
 })

@@ -6,7 +6,6 @@ import { useToast } from '../context/ToastContext'
 import CommentForm from './CommentForm'
 import CommentNode from './CommentNode'
 import EmptyState from './EmptyState'
-import PillTabs from './PillTabs'
 import { CommentThreadSkeleton } from './Skeleton'
 import useIsDesktop from '../hooks/useIsDesktop'
 import { subscribe } from '../lib/live'
@@ -88,30 +87,44 @@ export default function CommentThread({ reviewId }) {
   if (roots === null) {
     if (error) {
       return (
-        <div className="mt-4 rounded-lg border border-chili-500/40 bg-surface px-3 py-3 text-sm text-chili-600">
+        <div className="mt-4 border-2 border-chili-500 bg-surface px-3 py-3 text-sm font-semibold text-chili-600 shadow-card">
           {error}
-          <button type="button" onClick={load} className="ml-2 font-medium underline">
+          <button type="button" onClick={load} className="ml-2 font-bold underline">
             Retry
           </button>
         </div>
       )
     }
     return (
-      <section className="mt-4 border-t border-line pt-3">
+      <section className="mt-4 border-t-2 border-ink pt-3">
         <CommentThreadSkeleton />
       </section>
     )
   }
 
   return (
-    <section className="mt-4 border-t border-line pt-3">
+    <section className="mt-4 border-t-2 border-ink pt-3">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-sm font-semibold text-ink">
+        <h3 className="sticker px-3 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
           {count} {count === 1 ? 'comment' : 'comments'}
         </h3>
         {count > 0 && (
-          <div className="ml-auto">
-            <PillTabs size="sm" options={SORT_OPTIONS} value={sort} onChange={setSort} />
+          <div className="ml-auto flex flex-wrap gap-1.5">
+            {SORT_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={sort === opt.value}
+                onClick={() => setSort(opt.value)}
+                className={`border-2 border-ink px-2.5 py-1 text-xs font-bold uppercase tracking-wide transition duration-150 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none ${
+                  sort === opt.value
+                    ? 'bg-accent text-surface shadow-card'
+                    : 'bg-surface text-ink shadow-card hover:bg-accent-soft'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -130,11 +143,11 @@ export default function CommentThread({ reviewId }) {
             <button
               type="button"
               onClick={() => toggleReply('__root__')}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-muted transition-colors duration-150 hover:border-accent/50 hover:text-accent"
+              className="hard-btn border-2 bg-surface px-3 py-2 text-sm font-bold uppercase tracking-wide text-ink hover:bg-accent hover:text-surface"
             >
               <svg
                 viewBox="0 0 24 24"
-                className="h-4 w-4"
+                className="mr-1.5 inline h-4 w-4"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.75"
@@ -149,8 +162,8 @@ export default function CommentThread({ reviewId }) {
           </div>
         )
       ) : (
-        <p className="mt-2 text-xs text-muted">
-          <Link to="/login" className="font-medium text-accent transition-colors duration-150 hover:underline">
+        <p className="mt-2 text-xs font-semibold text-muted">
+          <Link to="/login" className="font-bold text-accent transition-colors duration-150 hover:underline">
             Log in
           </Link>{' '}
           to join the discussion.

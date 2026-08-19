@@ -3,7 +3,6 @@ import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { getProfile } from '../api/users'
 import { listSavedRestaurants } from '../api/restaurants'
 import EmptyState from '../components/EmptyState'
-import PillTabs from '../components/PillTabs'
 import RatingStars from '../components/RatingStars'
 import RestaurantCard from '../components/RestaurantCard'
 import { RestaurantCardSkeleton, Skeleton } from '../components/Skeleton'
@@ -93,26 +92,29 @@ export default function UserProfilePage() {
           <div className="mx-auto max-w-[640px]">
             {loading ? (
               <div className="space-y-4">
-                <Skeleton className="h-32 rounded-lg" />
+                <Skeleton className="h-36 border-2 border-ink" />
                 <RestaurantCardSkeleton />
                 <RestaurantCardSkeleton />
               </div>
             ) : notFound || !profile ? (
               <div className="py-12 text-center">
-                <h1 className="font-display text-2xl font-semibold text-ink">User not found</h1>
+                <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-ink">
+                  User not found
+                </h1>
               </div>
             ) : (
               <>
-                <header className="rounded-lg border border-line bg-surface p-6 shadow-card">
+                <header className="sticker relative p-5">
+                  <span className="tape" aria-hidden="true" />
                   <div className="flex items-center gap-4">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-basil-100 font-display text-2xl font-semibold text-basil-600">
+                    <div className="sticker grid h-16 w-16 shrink-0 -rotate-3 place-items-center bg-accent font-display text-3xl font-semibold text-surface">
                       {profile.user.name.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <h1 className="font-display text-2xl font-semibold text-ink">
+                    <div className="min-w-0">
+                      <h1 className="font-display text-3xl font-semibold uppercase leading-tight tracking-wide text-ink">
                         {profile.user.name}
                       </h1>
-                      <p className="mt-1 text-sm text-muted">
+                      <p className="mt-1 text-sm font-semibold text-muted">
                         {isOwnProfile && <span className="mr-2">{profile.user.email}</span>}
                         Joined {formatLongDate(profile.user.createdAt)}
                       </p>
@@ -121,24 +123,36 @@ export default function UserProfilePage() {
                 </header>
 
                 {error && (
-                  <div className="mt-4 rounded-lg border border-chili-500/40 bg-surface px-4 py-3 text-sm text-chili-600">
+                  <div className="mt-4 border-2 border-chili-500 bg-surface px-4 py-3 text-sm font-semibold text-chili-600 shadow-card">
                     {error}
                   </div>
                 )}
 
-                <div className="mt-6">
-                  <PillTabs
-                    options={tabs.map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }))}
-                    value={tab}
-                    onChange={setTab}
-                  />
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {tabs.map((t) => {
+                    const label = t.charAt(0).toUpperCase() + t.slice(1)
+                    const active = tab === t
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setTab(t)}
+                        className={`border-2 border-ink px-3 py-1.5 text-sm font-bold uppercase tracking-wide transition duration-150 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none ${
+                          active ? 'bg-accent text-surface shadow-card' : 'bg-surface text-ink shadow-card hover:bg-accent-soft'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
                 </div>
 
                 <div key={tab} className="animate-fade-slide-in">
                 {tab === 'saved' ? (
                   <section className="mt-6">
                     {savedError && (
-                      <p className="rounded-lg border border-chili-500/40 bg-surface px-4 py-3 text-sm text-chili-600">
+                      <p className="border-2 border-chili-500 bg-surface px-4 py-3 text-sm font-semibold text-chili-600 shadow-card">
                         {savedError}
                       </p>
                     )}
@@ -173,7 +187,7 @@ export default function UserProfilePage() {
                         action={
                           <Link
                             to="/"
-                            className="inline-block text-sm font-medium text-accent transition-colors duration-150 hover:underline"
+                            className="hard-btn inline-block border-2 bg-surface px-3 py-2 text-sm font-bold uppercase tracking-wide text-accent hover:bg-accent hover:text-surface"
                           >
                             Browse restaurants →
                           </Link>
@@ -183,7 +197,7 @@ export default function UserProfilePage() {
                   </section>
                 ) : tab === 'comments' ? (
                   <section className="mt-6">
-                    <h2 className="mb-3 font-display text-lg font-semibold text-ink">
+                    <h2 className="mb-3 sticker inline-block px-3 py-1.5 font-display text-base font-semibold uppercase tracking-wide text-ink">
                       Comments ({profile.comments.length})
                     </h2>
                     {profile.comments.length === 0 ? (
@@ -196,10 +210,11 @@ export default function UserProfilePage() {
                         }
                       />
                     ) : (
-                      <ul className="space-y-3">
+                      <ul className="space-y-4">
                         {profile.comments.map((comment) => (
-                          <li key={comment.id}>
-                            <article className="flex gap-3 rounded-lg border border-line bg-surface p-4 shadow-card transition duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-card-hover">
+                          <li key={comment.id} className="animate-fade-slide-in stagger-fill">
+                            <article className="sticker relative flex gap-3 p-3">
+                              <span className="tape" aria-hidden="true" />
                               <VoteControl
                                 votableType="COMMENT"
                                 votableId={comment.id}
@@ -207,12 +222,12 @@ export default function UserProfilePage() {
                                 initialMyVote={comment.myVote}
                                 size="sm"
                               />
-                              <div className="min-w-0 flex-1">
+                              <div className="min-w-0 flex-1 break-words">
                                 <header className="flex flex-wrap items-center gap-2 text-sm">
-                                  <span className="font-semibold text-ink">on</span>
+                                  <span className="text-xs font-bold uppercase tracking-wide text-muted">on</span>
                                   <Link
                                     to={`/restaurants/${comment.restaurantId}`}
-                                    className="font-medium text-accent transition-colors duration-150 hover:underline"
+                                    className="font-bold text-accent transition-colors duration-150 hover:underline"
                                   >
                                     {comment.restaurantName}
                                   </Link>
@@ -223,10 +238,10 @@ export default function UserProfilePage() {
                                     <span className="text-xs italic text-muted">(edited)</span>
                                   )}
                                 </header>
-                                <p className="mt-2 break-words whitespace-pre-wrap text-sm text-ink/85">
+                                <p className="mt-2 break-words whitespace-pre-wrap font-serif text-base leading-relaxed text-ink/85">
                                   {comment.content}
                                 </p>
-                                <p className="mt-2 line-clamp-2 border-l-2 border-line pl-3 text-xs italic text-muted">
+                                <p className="mt-2 line-clamp-2 border-l-2 border-ink/20 pl-3 font-serif text-sm italic text-muted">
                                   {comment.reviewContent}
                                 </p>
                               </div>
@@ -238,7 +253,7 @@ export default function UserProfilePage() {
                   </section>
                 ) : (
                   <section className="mt-6">
-                    <h2 className="mb-3 font-display text-lg font-semibold text-ink">
+                    <h2 className="mb-3 sticker inline-block px-3 py-1.5 font-display text-base font-semibold uppercase tracking-wide text-ink">
                       Reviews ({profile.reviews.length})
                     </h2>
                     {profile.reviews.length === 0 ? (
@@ -251,21 +266,22 @@ export default function UserProfilePage() {
                         }
                       />
                     ) : (
-                      <ul className="space-y-3">
+                      <ul className="space-y-4">
                         {profile.reviews.map((review) => (
-                          <li key={review.id}>
-                            <article className="flex gap-3 rounded-lg border border-line bg-surface p-4 shadow-card transition duration-150 ease-out hover:-translate-y-0.5 hover:border-accent/30 hover:shadow-card-hover">
+                          <li key={review.id} className="animate-fade-slide-in stagger-fill">
+                            <article className="sticker relative flex gap-3 p-3">
+                              <span className="tape" aria-hidden="true" />
                               <VoteControl
                                 votableType="REVIEW"
                                 votableId={review.id}
                                 initialScore={review.score}
                                 initialMyVote={review.myVote}
                               />
-                              <div className="min-w-0 flex-1">
+                              <div className="min-w-0 flex-1 break-words">
                                 <header className="flex flex-wrap items-center gap-2 text-sm">
                                   <Link
                                     to={`/restaurants/${review.restaurantId}`}
-                                    className="font-semibold text-accent transition-colors duration-150 hover:underline"
+                                    className="font-bold text-accent transition-colors duration-150 hover:underline"
                                   >
                                     {review.restaurantName}
                                   </Link>
@@ -277,7 +293,7 @@ export default function UserProfilePage() {
                                     <span className="text-xs italic text-muted">(edited)</span>
                                   )}
                                 </header>
-                                <p className="mt-2 break-words whitespace-pre-wrap text-base leading-relaxed text-ink/85">
+                                <p className="mt-2 break-words whitespace-pre-wrap font-serif text-lg leading-relaxed text-ink/85">
                                   {review.content}
                                 </p>
                               </div>
@@ -295,9 +311,12 @@ export default function UserProfilePage() {
         </main>
 
         <aside className="hidden w-72 shrink-0 lg:block">
-          <div className="sticky top-20 rounded-lg border border-line bg-surface p-4 shadow-card">
-            <h2 className="font-display text-base font-semibold text-ink">About Fooddit</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
+          <div className="sticky top-24 sticker relative p-4">
+            <span className="tape" aria-hidden="true" />
+            <h2 className="font-display text-base font-semibold uppercase tracking-wide text-ink">
+              About Fooddit
+            </h2>
+            <p className="mt-2 font-serif text-sm leading-relaxed text-muted">
               Restaurant reviews worth discussing. Rate what you ate, then join the threaded
               conversation under each review.
             </p>

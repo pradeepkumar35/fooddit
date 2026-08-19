@@ -37,7 +37,7 @@ export default function CommentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2">
+    <form onSubmit={handleSubmit} className="mt-2 border-2 border-ink bg-surface p-3 shadow-card">
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
@@ -45,15 +45,15 @@ export default function CommentForm({
         rows={2}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors duration-150 focus:border-accent"
+        className="w-full resize-y border-2 border-ink bg-canvas px-3 py-2 font-serif text-base leading-relaxed text-ink placeholder:text-muted focus:border-accent focus:outline-none"
       />
-      {error && <p className="mt-1 text-xs text-chili-600">{error}</p>}
+      {error && <p className="mt-1 text-xs font-semibold text-chili-600">{error}</p>}
       <div className="mt-1 flex items-center justify-end gap-2">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg px-3 py-2 text-sm text-muted transition-colors duration-150 hover:text-ink"
+            className="px-3 py-2 text-sm text-muted transition-colors duration-150 hover:text-ink"
           >
             Cancel
           </button>
@@ -61,7 +61,7 @@ export default function CommentForm({
         <button
           type="submit"
           disabled={submitting || !content.trim()}
-          className="flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-surface transition duration-150 ease-out hover:bg-accent/90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          className="hard-btn border-2 bg-accent px-3 py-2 text-sm text-surface disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting && <Spinner />}
           {submitting ? 'Posting…' : submitLabel}

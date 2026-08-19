@@ -62,8 +62,9 @@ export default function VoteControl({ votableType, votableId, initialScore, init
     }
   }
 
+  const isChip = size === 'chip'
   const Arrow = ({ direction, active }) => {
-    const sizeClass = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'
+    const sizeClass = size === 'sm' || isChip ? 'h-3 w-3' : 'h-4 w-4'
     const animating = pop.dir === direction
     return (
       <svg
@@ -80,25 +81,34 @@ export default function VoteControl({ votableType, votableId, initialScore, init
     )
   }
 
-  const upClass = myVote === 1 ? 'text-accent' : 'text-muted hover:text-accent'
-  const downClass = myVote === -1 ? 'text-down' : 'text-muted hover:text-down'
+  const upClass = myVote === 1 ? 'bg-up text-surface border-up' : 'bg-surface text-muted border-ink hover:text-up'
+  const downClass = myVote === -1 ? 'bg-down text-surface border-down' : 'bg-surface text-muted border-ink hover:text-down'
   const scoreClass =
-    myVote === 1 ? 'text-accent' : myVote === -1 ? 'text-down' : 'text-ink'
-  const scoreSize = size === 'sm' ? 'text-sm' : 'text-base'
-  const padClass = size === 'sm' ? 'p-4' : 'p-3.5'
+    myVote === 1 ? 'text-up' : myVote === -1 ? 'text-down' : 'text-ink'
+  const scoreSize = size === 'sm' ? 'text-sm' : isChip ? 'text-xs' : 'text-base'
+  const padClass = size === 'sm' ? 'p-2.5' : isChip ? 'p-1.5' : 'p-3'
+  const btnClass =
+    'flex items-center justify-center border-2 shadow-card transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0.5 active:shadow-none disabled:opacity-50'
 
   return (
-    <div className="flex flex-col items-center">
+    <div className={isChip ? 'flex items-center gap-2' : 'flex flex-col items-center'}>
       <button
         type="button"
         onClick={() => handleVote(1)}
         disabled={busy}
         aria-label="Upvote"
-        className={`-m-2 flex items-center justify-center rounded-full ${padClass} ${upClass} transition duration-150 ease-out active:scale-75 disabled:opacity-50`}
+        className={`${btnClass} ${padClass} ${upClass}`}
       >
         <Arrow direction="up" active={myVote === 1} />
       </button>
-      <span key={score} className={`${scoreSize} animate-score-in my-1.5 font-semibold leading-none tabular-nums ${scoreClass}`}>
+      <span
+        key={score}
+        className={`${scoreSize} ${
+          isChip
+            ? 'min-w-8 border-2 border-ink bg-surface px-2 py-1 text-center shadow-card'
+            : 'my-2.5'
+        } animate-score-in font-bold leading-none tabular-nums ${scoreClass}`}
+      >
         {score}
       </span>
       <button
@@ -106,11 +116,11 @@ export default function VoteControl({ votableType, votableId, initialScore, init
         onClick={() => handleVote(-1)}
         disabled={busy}
         aria-label="Downvote"
-        className={`-m-2 flex items-center justify-center rounded-full ${padClass} ${downClass} transition duration-150 ease-out active:scale-75 disabled:opacity-50`}
+        className={`${btnClass} ${padClass} ${downClass}`}
       >
         <Arrow direction="down" active={myVote === -1} />
       </button>
-      {error && <p className="mt-1 max-w-24 text-center text-xs text-chili-600">{error}</p>}
+      {error && <p className="mt-1 max-w-24 text-center text-xs font-semibold text-chili-600">{error}</p>}
     </div>
   )
 }

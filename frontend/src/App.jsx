@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import BackgroundFX from './components/BackgroundFX'
 import ProtectedRoute from './components/ProtectedRoute'
 import { NotificationsProvider } from './context/NotificationsContext'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
@@ -14,7 +15,8 @@ export default function App() {
   const location = useLocation()
 
   return (
-    <div className="min-h-screen bg-canvas text-ink">
+    <div className="min-h-screen text-ink">
+      <BackgroundFX />
       <NotificationsProvider>
         <Navbar />
         {/* Keyed on pathname so each route change fades the new page in; query
