@@ -100,6 +100,45 @@ To add a change, create the next version file (`V3__...sql`), then run the app �
 Flyway applies only new migrations and records them in `flyway_schema_history`.
 Never edit an already-applied migration; add a new one instead.
 
+## Keeping the backend warm (Render free tier)
+
+Render's free tier spins the backend down after ~15 minutes without traffic;
+the next request then waits through a 10–30 second cold start. To avoid that,
+an external uptime monitor pings `GET /api/ping` every few minutes:
+
+- `GET /api/ping` returns `{"status":"ok"}` and **touches nothing but the
+  application process** — no database query, no auth. It exists purely so an
+  external monitor can keep the Render service awake.
+- `GET /api/health` remains Render's own health check endpoint and is
+  unchanged; the warming ping does not need to use it.
+- **Do not** point any pinger at an endpoint that queries the database
+  (including Actuator-style health checks wired to a DataSource): waking Neon
+  on every ping defeats its scale-to-zero design and burns its monthly
+  compute-hour quota. Keep the two concerns separate — this warms Render only.
+
+### Monitor setup (UptimeRobot — recommended)
+
+1. Sign up at <https://uptimerobot.com> (free plan).
+2. Add New Monitor → type **HTTP(s)**, friendly name e.g. `fooddit-backend-warm`,
+   URL: `https://<your-render-backend-url>/api/ping`.
+3. Set the check interval to **10 minutes** (the free plan allows 5-minute
+   intervals; 10 is safely under Render's 15-minute spin-down threshold with
+   margin — more frequent adds nothing).
+4. Save, wait for the first few checks, and confirm the monitor shows
+   successful responses (HTTP 200).
+
+### Monitor setup (cron-job.org — alternative)
+
+1. Sign up at <https://cron-job.org> (free).
+2. Create a Cronjob, URL: `https://<your-render-backend-url>/api/ping`.
+3. Set the execution interval to **every 10 minutes**.
+4. Enable it and check the execution history shows HTTP 200 responses.
+
+A GitHub Actions scheduled workflow (`curl` every 10 minutes) also works, but
+only do this on a **public** repo: on a private repo the runs exceed GitHub
+Free's 2,000 Actions-minutes/month quota and get throttled or billed partway
+through the month. Prefer the external monitors above.
+
 ## Data import
 
 The real restaurant dataset lives in `data/` (gitignored). Import is a **one-off
@@ -118,7 +157,7 @@ summary of rows read / inserted / skipped.
 ## Tests
 
 ```powershell
-# backend (75 integration/unit tests)
+# backend (76 integration/unit tests)
 cd backend
 $env:JAVA_HOME = "C:\Program Files\Microsoft\jdk-21.0.7.6-hotspot"
 .\mvnw.cmd test
