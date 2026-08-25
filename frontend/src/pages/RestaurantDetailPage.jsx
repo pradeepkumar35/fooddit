@@ -46,6 +46,17 @@ export default function RestaurantDetailPage() {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  // Navigating between dossiers reuses this component (same route, new param),
+  // so reset fetch state — otherwise restaurant A's data flashes while B loads,
+  // and a stale `reviews` array defeats the loading guard below.
+  useEffect(() => {
+    setRestaurant(null)
+    setReviews(null)
+    setStats(null)
+    setError('')
+    setNotFound(false)
+  }, [id])
+
   const loadData = useCallback(() => {
     if (!id) return
     getRestaurant(id)
@@ -126,15 +137,29 @@ export default function RestaurantDetailPage() {
     }
   }
 
-  if (notFound || (!restaurant && !reviews)) {
-    if (notFound) {
+  // The dossier body needs `restaurant` — full stop. `reviews` resolving
+  // first (an empty array is truthy!) must NOT release the skeleton, or
+  // `restaurant.name` crashes on unreviewed entries.
+  if (notFound) {
+    return (
+      <div className="mx-auto max-w-[1160px] px-4 py-20 text-center sm:px-6">
+        <p className="micro-label mb-2">404 · no such entry</p>
+        <h1 className="font-serif text-3xl font-bold text-ink">Dossier not found</h1>
+        <Link to="/" className="btn-hard mt-6 inline-block px-4 py-2 text-sm">
+          ← Back to the ledger
+        </Link>
+      </div>
+    )
+  }
+
+  if (!restaurant) {
+    if (error) {
       return (
         <div className="mx-auto max-w-[1160px] px-4 py-20 text-center sm:px-6">
-          <p className="micro-label mb-2">404 · no such entry</p>
-          <h1 className="font-serif text-3xl font-bold text-ink">Dossier not found</h1>
-          <Link to="/" className="btn-hard mt-6 inline-block px-4 py-2 text-sm">
-            ← Back to the ledger
-          </Link>
+          <p className="border-[1.5px] border-down bg-card px-4 py-3 text-sm font-semibold text-down">{error}</p>
+          <button type="button" onClick={() => { setError(''); loadData(); }} className="btn-hard mt-6 px-4 py-2 text-sm">
+            Retry
+          </button>
         </div>
       )
     }
