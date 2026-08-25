@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,4 +66,44 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
 
         long getCount();
     }
+
+    /**
+     * Latest live comment per restaurant, author fetched eagerly. Ties across
+     * restaurants are possible (same max timestamp); callers dedupe by
+     * restaurant id keeping the newest.
+     */
+    @Query("""
+            select c from Comment c
+            join fetch c.user
+            where c.deleted = false
+              and c.review.restaurant.id in :ids
+              and c.createdAt = (
+                  select max(c2.createdAt) from Comment c2
+                  where c2.review.restaurant.id = c.review.restaurant.id
+                    and c2.deleted = false)
+            """)
+    List<Comment> findLatestPerRestaurant(@Param("ids") Collection<UUID> ids);
+
+    /** Most recent live comment timestamp per restaurant (discussion pulse). */
+    @Query("""
+            select c.review.restaurant.id as rid, max(c.createdAt) as latest
+            from Comment c
+            where c.deleted = false and c.review.restaurant.id in :ids
+            group by c.review.restaurant.id
+            """)
+    List<RestaurantLatestActivity> latestActivityByRestaurantIds(@Param("ids") Collection<UUID> ids);
+
+    interface RestaurantLatestActivity {
+        UUID getRid();
+
+        Instant getLatest();
+    }
+
+    /** [authorId, commentId] pairs for a set of authors (reputation sums). */
+    @Query("""
+            select c.user.id as authorId, c.id as commentId
+            from Comment c
+            where c.user.id in :ids
+            """)
+    List<Object[]> findAuthorAndIdByAuthorIds(@Param("ids") Collection<UUID> ids);
 }

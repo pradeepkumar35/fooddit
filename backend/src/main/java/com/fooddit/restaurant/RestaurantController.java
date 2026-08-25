@@ -1,7 +1,9 @@
 package com.fooddit.restaurant;
 
 import com.fooddit.config.exception.BadRequestException;
+import com.fooddit.restaurant.dto.LedgerPageDto;
 import com.fooddit.restaurant.dto.RestaurantDto;
+import com.fooddit.restaurant.dto.RestaurantStatsDto;
 import com.fooddit.restaurant.dto.RestaurantSuggestionDto;
 import com.fooddit.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +58,37 @@ public class RestaurantController {
     @GetMapping("/cuisines")
     public List<String> cuisines() {
         return restaurantService.listCuisines();
+    }
+
+    /**
+     * The City Ledger: server-paginated enriched rows (rank/tier standing,
+     * discussion aggregates, monthly vote delta). {@code sort} is
+     * mostdiscussed (default — discussion is the product's headline),
+     * rating or new; {@code page} is 0-based and {@code size} defaults to 30.
+     * Slicing happens here, never client-side.
+     */
+    @GetMapping("/ledger")
+    public LedgerPageDto ledger(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String cuisine,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String locality,
+            @RequestParam(required = false) Double rating,
+            @RequestParam(required = false, defaultValue = "mostdiscussed") String sort,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "30") int size,
+            @AuthenticationPrincipal Object principal) {
+        return restaurantService.ledger(q, cuisine, city, locality, rating, sort,
+                page, size, CurrentUser.orNull(principal));
+    }
+
+    /**
+     * Fact-sheet payload for the restaurant Dossier: city rank seal, star
+     * distribution histogram, review count and first-reviewed date.
+     */
+    @GetMapping("/{id}/stats")
+    public RestaurantStatsDto stats(@PathVariable UUID id) {
+        return restaurantService.stats(id);
     }
 
     /**

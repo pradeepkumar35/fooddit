@@ -1,55 +1,104 @@
 /**
- * Shimmering skeleton placeholders. `Skeleton` is a bare bar; the two composite
- * skeletons mirror the real content's dimensions (feed card, comment thread) so
- * nothing jumps when data arrives.
+ * Shimmering placeholders tinted paper/hairline (never generic gray), shaped
+ * like the real ledger surfaces so nothing jumps when data lands.
  */
 export function Skeleton({ className = '' }) {
   return <div className={`skeleton ${className}`} aria-hidden="true" />
 }
 
-export function RestaurantCardSkeleton() {
+/** One ledger row worth of placeholder. */
+export function LedgerRowSkeleton() {
   return (
-    <div className="sticker flex gap-4 p-4" aria-hidden="true">
-      <div className="flex w-16 shrink-0 flex-col items-center gap-2 border-2 border-ink bg-basil-100 py-2">
-        <Skeleton className="h-6 w-9" />
-        <Skeleton className="h-3 w-3 rounded-full" />
-        <Skeleton className="h-3 w-5" />
+    <div className="flex items-start gap-4 px-1 py-4" aria-hidden="true">
+      <div className="flex w-14 shrink-0 flex-col items-start gap-2 pt-1">
+        <Skeleton className="h-3.5 w-8" />
+        <Skeleton className="h-4 w-4 rounded-full" />
       </div>
-      <div className="min-w-0 flex-1 space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <Skeleton className="h-6 w-44" />
-          <Skeleton className="h-8 w-8" />
-        </div>
-        <Skeleton className="h-6 w-28" />
-        <Skeleton className="h-3 w-52" />
-        <Skeleton className="h-9 w-32" />
+      <div className="min-w-0 flex-1 space-y-2.5">
+        <Skeleton className="h-5 w-52" />
+        <Skeleton className="h-3 w-36" />
+        <Skeleton className="h-3.5 w-3/4" />
+        <Skeleton className="h-2.5 w-40" />
+      </div>
+      <div className="hidden w-20 shrink-0 flex-col items-end gap-2 sm:flex">
+        <Skeleton className="h-6 w-12" />
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-2.5 w-10" />
+      </div>
+      <Skeleton className="h-9 w-9 rounded-full" />
+    </div>
+  )
+}
+
+/** Dossier fact-sheet rail placeholder. */
+export function FactSheetSkeleton() {
+  return (
+    <div className="panel grid gap-4 p-5" aria-hidden="true">
+      <Skeleton className="mx-auto h-16 w-16 rounded-full" />
+      <Skeleton className="mx-auto h-3 w-24" />
+      <div className="space-y-3 border-t border-hair pt-3">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex justify-between">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-12" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-2.5 border-t border-hair pt-3">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="grid grid-cols-[14px_1fr_28px] items-center gap-2">
+            <Skeleton className="h-2.5 w-7" />
+            <Skeleton className="h-2 w-full" />
+            <Skeleton className="h-2.5 w-6" />
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
+/** Dossier review card placeholder. */
+export function ReviewCardSkeleton() {
+  return (
+    <div className="panel-hair p-5" aria-hidden="true">
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-11 w-11 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+        <Skeleton className="h-3 w-14" />
+      </div>
+      <div className="mt-4 space-y-2">
+        <Skeleton className="h-3.5 w-full" />
+        <Skeleton className="h-3.5 w-11/12" />
+        <Skeleton className="h-3.5 w-2/3" />
+      </div>
+      <div className="mt-4 flex gap-2">
+        <Skeleton className="h-8 w-24 border border-hair" />
+        <Skeleton className="h-8 w-16 border border-hair" />
+      </div>
+    </div>
+  )
+}
+
+/** Threaded replies placeholder. */
 export function CommentThreadSkeleton() {
   return (
     <div className="space-y-3" aria-hidden="true">
-      <Skeleton className="h-6 w-32 border-2 border-ink" />
-      <div className="border-2 border-ink bg-surface p-3 shadow-card">
-        <Skeleton className="h-4 w-full" />
-        <div className="mt-2 flex justify-end">
-          <Skeleton className="h-7 w-24 border-2 border-ink" />
+      <div className="panel-hair p-4">
+        <Skeleton className="h-3.5 w-full" />
+        <div className="mt-3 flex justify-end">
+          <Skeleton className="h-8 w-24 border border-hair" />
         </div>
       </div>
       {[0, 1, 2].map((i) => (
-        <div key={i} className="flex gap-2">
-          <div className="flex flex-col items-center gap-2 border-2 border-ink bg-basil-100 p-1.5">
-            <Skeleton className="h-3 w-3" />
-            <Skeleton className="h-4 w-4" />
-            <Skeleton className="h-3 w-3" />
+        <div key={i} className={`reply-notch relative border border-hair bg-paper p-3.5 ${i === 0 ? '' : 'ml-[26px]'}`}>
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="h-6 w-6 rounded-full" />
+            <Skeleton className="h-3 w-24" />
           </div>
-          <div className="min-w-0 flex-1 space-y-2 border-2 border-ink bg-surface p-2 shadow-card">
-            <Skeleton className="h-3 w-32" />
-            <Skeleton className="h-3 w-full" />
-            <Skeleton className="h-3 w-3/4" />
-          </div>
+          <Skeleton className="mt-2 h-3 w-3/4" />
         </div>
       ))}
     </div>

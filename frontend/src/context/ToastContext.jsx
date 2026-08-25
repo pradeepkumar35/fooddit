@@ -2,16 +2,18 @@ import { createContext, useCallback, useContext, useRef, useState } from 'react'
 
 const ToastContext = createContext(() => {})
 
+/* Ledger accents: emerald = success, oxblood = error, muted = info. */
 const ACCENTS = {
-  success: 'border-l-up',
-  error: 'border-l-down',
-  info: 'border-l-muted',
+  success: 'border-l-emerald',
+  error: 'border-l-oxblood',
+  info: 'border-l-tierslate',
 }
 
 /**
  * Tiny toast system: {@code useToast()} returns a {@code notify(message, type)}
  * function. Toasts slide in from the bottom-right corner and auto-dismiss after
- * ~2.6s. Only the last four are kept on screen.
+ * ~2.6s. Only the last four are kept on screen. Styled as hairline ledger slips
+ * with a colored left rule.
  */
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
@@ -46,7 +48,7 @@ export function ToastProvider({ children }) {
           <div
             key={toast.id}
             role="status"
-            className={`pointer-events-auto max-w-xs border-2 border-ink border-l-4 bg-surface px-4 py-3 font-serif text-sm font-semibold leading-relaxed text-ink shadow-card-hover ${
+            className={`pointer-events-auto max-w-xs border border-hair border-l-4 bg-card px-4 py-3 text-sm font-medium text-ink shadow-hard-sm ${
               ACCENTS[toast.type] ?? ACCENTS.success
             } ${toast.leaving ? 'animate-toast-out' : 'animate-toast-in'}`}
           >

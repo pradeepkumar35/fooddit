@@ -21,11 +21,10 @@ const TYPE_TEXT = {
 }
 
 /**
- * Bell + dropdown showing reply notifications. Polling and the unread badge are
- * owned by {@link NotificationsProvider} (hoisted to app level), so the badge
- * stays fresh even when this dropdown is not mounted. Opening the dropdown
- * additionally triggers an immediate refresh; clicking a notification opens the
- * restaurant page and marks it read.
+ * Bell + dropdown showing reply notifications. Polling and the unread badge
+ * are owned by NotificationsProvider, so the badge stays fresh even when this
+ * dropdown is not mounted. Opening triggers an immediate refresh; clicking a
+ * notification opens the restaurant page and marks it read.
  */
 export default function NotificationsDropdown() {
   const navigate = useNavigate()
@@ -63,28 +62,32 @@ export default function NotificationsDropdown() {
         onClick={handleOpen}
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ''}`}
         aria-expanded={open}
-        className="relative border-2 border-ink bg-surface p-1.5 text-ink shadow-card transition duration-150 hover:bg-accent-soft active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+        className="grid h-10 w-10 place-items-center rounded-full border-[1.5px] border-hair bg-card text-ink transition duration-150 hover:border-ink"
       >
-        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75">
           <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.7 21a2 2 0 0 1-3.4 0" />
         </svg>
+        {/* Badge pops (keyed remount) when the polled count changes. */}
         {unread > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center border-2 border-ink bg-chili-500 px-1 text-[10px] font-bold text-surface">
+          <b
+            key={unread}
+            className="num animate-pop-in absolute -right-1 -top-1 grid h-[19px] min-w-[19px] place-items-center rounded-full border-2 border-paper bg-down px-1 text-[10px] font-bold text-white"
+          >
             {unread > 99 ? '99+' : unread}
-          </span>
+          </b>
         )}
       </button>
 
       {open && (
-        <div className="animate-fade-slide-in absolute right-0 top-full z-10 mt-2 w-80 max-w-[calc(100vw-1rem)] origin-top-right overflow-hidden border-2 border-ink bg-surface shadow-card-hover">
-          <div className="flex items-center justify-between border-b-2 border-ink bg-accent px-4 py-2.5">
-            <span className="text-sm font-bold uppercase tracking-wide text-surface">Notifications</span>
+        <div className="panel animate-pop-in absolute right-0 top-full z-20 mt-2 w-80 max-w-[calc(100vw-1rem)] origin-top-right overflow-hidden">
+          <div className="flex items-center justify-between gap-2 border-b border-hair bg-paper px-4 py-2.5">
+            <span className="micro-label">Notifications</span>
             {unread > 0 && (
               <button
                 type="button"
                 onClick={handleMarkAllRead}
-                className="border-2 border-ink bg-surface px-2 py-1 text-xs font-bold uppercase tracking-wide text-ink shadow-card transition duration-150 hover:bg-canvas active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                className="border border-hair px-2 py-1 text-[11px] font-semibold text-muted transition hover:border-ink hover:text-ink"
               >
                 Mark all read
               </button>
@@ -93,31 +96,34 @@ export default function NotificationsDropdown() {
 
           <div className="max-h-96 overflow-y-auto">
             {loading && items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-sm font-semibold text-muted">Loading…</p>
+              <p className="px-4 py-8 text-center text-sm font-medium text-muted">Loading…</p>
             ) : items.length === 0 ? (
-              <p className="px-4 py-8 text-center text-sm font-semibold text-muted">No notifications yet</p>
+              <p className="px-4 py-8 text-center text-sm font-medium text-muted">No notifications yet</p>
             ) : (
               items.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => handleClick(item)}
-                  className={`block w-full border-b border-ink/10 px-4 py-3 text-left transition-colors duration-150 hover:bg-canvas ${
+                  className={`block w-full border-b border-hair px-4 py-3 text-left transition-colors duration-150 last:border-b-0 hover:bg-paper ${
                     item.read ? 'opacity-70' : ''
                   }`}
                 >
-                  <span className="flex items-start gap-2">
-                    {!item.read && <span className="mt-1.5 h-3 w-3 shrink-0 border-2 border-ink bg-basil-500" />}
+                  <span className="flex items-start gap-2.5">
+                    {!item.read && (
+                      <span aria-hidden="true" className="mt-1 h-2 w-2 shrink-0 bg-gold" />
+                    )}
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-bold text-ink">
-                        {item.actorName} {TYPE_TEXT[item.type] || 'replied'} at {item.restaurantName}
+                      <span className="block text-sm text-ink">
+                        <b>{item.actorName}</b> {TYPE_TEXT[item.type] || 'replied'} at{' '}
+                        <span className="font-semibold">{item.restaurantName}</span>
                       </span>
                       {item.replyPreview && (
                         <span className="mt-0.5 block truncate font-serif text-xs italic text-muted">
                           “{item.replyPreview}”
                         </span>
                       )}
-                      <span className="mt-0.5 block text-xs font-semibold text-muted">{timeAgo(item.createdAt)}</span>
+                      <span className="num mt-0.5 block text-[11px] text-muted">{timeAgo(item.createdAt)}</span>
                     </span>
                   </span>
                 </button>

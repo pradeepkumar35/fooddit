@@ -15,13 +15,9 @@ const REASONS = [
 /**
  * The overflow menu on a review or comment: a quiet "⋯" button that opens a
  * reason picker and submits a report. Anonymous users are redirected to /login
- * preserving the return path. Only ever removes itself from view after a
- * successful (or duplicate) report — there is no moderation UI in this PoC.
- *
- * The reason picker is rendered through a portal into {@code document.body} so
- * it is never clipped by overflow-hidden ancestors (comment reply threads use
- * overflow-hidden for their collapse animation); it is positioned from the
- * button and closes on outside mousedown, scrolling or resizing.
+ * preserving the return path. Rendered through a portal into document.body so
+ * it is never clipped by overflow-hidden ancestors; closes on outside
+ * mousedown, scrolling or resizing.
  */
 export default function ReportMenu({ targetType, targetId }) {
   const { isAuthenticated } = useAuth()
@@ -41,8 +37,6 @@ export default function ReportMenu({ targetType, targetId }) {
       setOpen(false)
     }
     const close = () => setOpen(false)
-    // mousedown lets us close before a click, without catching the trigger
-    // itself; scroll/resize close so a fixed-position menu never goes stale.
     document.addEventListener('mousedown', onClickOutside)
     window.addEventListener('scroll', close, true)
     window.addEventListener('resize', close)
@@ -94,7 +88,7 @@ export default function ReportMenu({ targetType, targetId }) {
   const guard = `${targetType}-${targetId}`
 
   if (state === 'done') {
-    return <span className="text-xs text-muted">Reported</span>
+    return <span className="num text-[11px] uppercase tracking-wider text-muted">Reported</span>
   }
 
   return (
@@ -106,7 +100,7 @@ export default function ReportMenu({ targetType, targetId }) {
         aria-label="More actions"
         aria-expanded={open}
         onClick={openMenu}
-        className="border-2 border-ink bg-surface p-1 text-ink shadow-card transition duration-150 hover:bg-accent-soft active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+        className="grid h-8 min-w-8 place-items-center border border-hair bg-card px-1.5 text-ink transition duration-150 hover:border-ink"
       >
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
           <circle cx="5" cy="12" r="1.6" />
@@ -121,23 +115,23 @@ export default function ReportMenu({ targetType, targetId }) {
             role="menu"
             data-report={guard}
             style={{ top: pos?.top ?? 0, right: pos?.right ?? 0 }}
-            className="animate-fade-slide-in fixed z-50 w-44 overflow-hidden border-2 border-ink bg-surface py-1 shadow-card-hover"
+            className="panel animate-pop-in fixed z-50 w-44 overflow-hidden py-1 shadow-hard-md"
           >
-            <p className="sticker m-2 inline-block px-2 py-1 text-xs font-bold uppercase tracking-wide text-ink">
-              Report
-            </p>
+            <p className="micro-label px-3 pb-1 pt-2">Report</p>
             {REASONS.map((reason) => (
               <button
                 key={reason.value}
                 type="button"
                 disabled={state === 'submitting'}
                 onClick={() => handleReport(reason.value)}
-                className="block w-full px-3 py-2 text-left text-sm font-semibold text-ink transition-colors duration-150 hover:bg-canvas disabled:opacity-50"
+                className="block w-full border-t border-hair px-3 py-2 text-left text-sm font-medium text-ink transition-colors duration-150 first:border-t-0 hover:bg-paper disabled:opacity-50"
               >
                 {reason.label}
               </button>
             ))}
-            {state === 'error' && <p className="px-3 py-2 text-xs font-semibold text-chili-600">{error}</p>}
+            {state === 'error' && (
+              <p className="border-t border-hair px-3 py-2 text-xs font-semibold text-down">{error}</p>
+            )}
           </div>,
           document.body,
         )}

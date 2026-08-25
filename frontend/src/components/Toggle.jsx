@@ -1,7 +1,6 @@
 /**
- * A reliable iOS-style switch. The knob is anchored with an explicit left offset
- * and slides via a translate transform; the track recolors between accent (on)
- * and line (off).
+ * Square ledger switch: ink-framed track, card knob sliding on a fixed rail.
+ * Emerald fill when on. Keeps the role="switch" contract.
  */
 export default function Toggle({ checked, onChange, label }) {
   return (
@@ -11,13 +10,14 @@ export default function Toggle({ checked, onChange, label }) {
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-7 w-11 shrink-0 items-center border-2 border-ink transition-colors duration-150 active:scale-95 ${
-        checked ? 'bg-up' : 'bg-canvas'
+      className={`relative inline-flex h-7 w-12 shrink-0 items-center border-[1.5px] border-ink transition-colors duration-150 active:scale-[0.97] ${
+        checked ? 'bg-up' : 'bg-paper'
       }`}
     >
       <span
-        className={`inline-block h-5 w-5 border-2 border-ink bg-surface shadow-card transition-transform duration-200 ease-out ${
-          checked ? 'translate-x-[18px]' : 'translate-x-[2px]'
+        aria-hidden="true"
+        className={`inline-block h-5 w-5 border-[1.5px] border-ink bg-card transition-transform duration-200 ease-out ${
+          checked ? 'translate-x-[24px]' : 'translate-x-[2px]'
         }`}
       />
     </button>

@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const fieldClass =
-    'w-full border-2 border-ink bg-canvas px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none'
+    'w-full border-[1.5px] border-hair bg-paper px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none'
 
   const handleSendCode = async (event) => {
     event.preventDefault()
@@ -79,24 +79,24 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="mx-auto mt-12 w-full max-w-md px-4">
-      <div className="sticker relative p-6 sm:p-8">
-        <span className="tape" aria-hidden="true" />
+      <div className="panel relative mt-2 p-6 sm:p-8">
+        
         {step === 'done' ? (
           <>
-            <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-ink">Password updated</h1>
+            <h1 className="font-serif text-3xl font-bold tracking-tight text-ink">Password updated</h1>
             <p className="mb-6 mt-1 text-sm font-semibold text-muted">
               Your password has been reset. You can now log in with your new password.
             </p>
             <Link
               to="/login"
-              className="hard-btn flex w-full items-center justify-center gap-2 border-2 bg-accent py-2 text-sm text-surface"
+              className="btn-hard btn-hard-primary flex w-full items-center justify-center gap-2 py-2.5 text-sm"
             >
               Log in
             </Link>
           </>
         ) : (
           <>
-            <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-ink">Reset your password</h1>
+            <h1 className="font-serif text-3xl font-bold tracking-tight text-ink">Reset your password</h1>
             <p className="mb-6 mt-1 text-sm font-semibold text-muted">
               {step === 'email'
                 ? 'Enter your account email and we will send you a one-time code.'
@@ -104,12 +104,12 @@ export default function ForgotPasswordPage() {
             </p>
 
             {error && (
-              <div className="mb-4 border-2 border-chili-500 bg-surface px-3 py-2 text-sm font-semibold text-chili-600 shadow-card">
+              <div className="mb-4 border-l-4 border border-hair bg-card px-3 py-2 text-sm font-semibold text-down">
                 {error}
               </div>
             )}
             {info && (
-              <div className="mb-4 border-2 border-basil-500 bg-surface px-3 py-2 text-sm font-semibold text-basil-600 shadow-card">
+              <div className="mb-4 border-l-4 border border-hair bg-card px-3 py-2 text-sm font-semibold text-emerald">
                 {info}
               </div>
             )}
@@ -117,7 +117,7 @@ export default function ForgotPasswordPage() {
             {step === 'email' ? (
               <form onSubmit={handleSendCode} className="space-y-4">
                 <div>
-                  <label htmlFor="reset-email" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+                  <label htmlFor="reset-email" className="micro-label mb-1 block">
                     Email
                   </label>
                   <input
@@ -133,7 +133,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="hard-btn flex w-full items-center justify-center gap-2 border-2 bg-accent py-2 text-sm text-surface disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-hard btn-hard-primary flex w-full items-center justify-center gap-2 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting && <Spinner />}
                   {submitting ? 'Sending code…' : 'Send code'}
@@ -142,7 +142,7 @@ export default function ForgotPasswordPage() {
             ) : (
               <form onSubmit={handleReset} className="space-y-4">
                 <div>
-                  <label htmlFor="reset-otp" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+                  <label htmlFor="reset-otp" className="micro-label mb-1 block">
                     One-time code
                   </label>
                   <input
@@ -157,7 +157,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="reset-password" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+                  <label htmlFor="reset-password" className="micro-label mb-1 block">
                     New password
                   </label>
                   <input
@@ -172,7 +172,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="reset-confirm" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+                  <label htmlFor="reset-confirm" className="micro-label mb-1 block">
                     Confirm new password
                   </label>
                   <input
@@ -189,7 +189,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="hard-btn flex w-full items-center justify-center gap-2 border-2 bg-accent py-2 text-sm text-surface disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-hard btn-hard-primary flex w-full items-center justify-center gap-2 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting && <Spinner />}
                   {submitting ? 'Resetting…' : 'Reset password'}
@@ -200,7 +200,7 @@ export default function ForgotPasswordPage() {
                     type="button"
                     onClick={handleResend}
                     disabled={submitting}
-                    className="font-bold text-accent transition-colors duration-150 hover:underline"
+                    className="font-bold text-emerald transition-colors duration-150 hover:underline"
                   >
                     Resend code
                   </button>
@@ -210,7 +210,7 @@ export default function ForgotPasswordPage() {
 
             <p className="mt-6 text-center text-sm font-semibold text-muted">
               Remembered it?{' '}
-              <Link to="/login" className="font-bold text-accent transition-colors duration-150 hover:underline">
+              <Link to="/login" className="font-bold text-emerald transition-colors duration-150 hover:underline">
                 Log in
               </Link>
             </p>

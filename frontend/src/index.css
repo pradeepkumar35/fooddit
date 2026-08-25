@@ -3,80 +3,75 @@
 /* Toggle the whole theme by adding/removing `.dark` on <html>. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ============================================================================
+   THE LEDGER — design tokens
+   Civic-record aesthetic: warm paper, ink hairlines, monospace numerals,
+   tier seals (gold/emerald/slate) and a single oxblood alarm accent.
+   Exact values from fooddit-mock-the-ledger.html (:root + [data-theme=dark]).
+   ========================================================================= */
 @theme {
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Anton", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Every numeral in the product renders in Plex Mono — ranks, scores, counts,
+     timestamps. This consistency is the signature detail; don't let it drift. */
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-serif: "IBM Plex Serif", Georgia, serif;
+  /* Legacy alias: existing `font-display` call sites now resolve to Plex Serif. */
+  --font-display: var(--font-serif);
 
-  /* ZINE STALL: orange = brand/CTA, cobalt = positive (upvote/save), red =
-     negative (downvote/errors), gold = ratings. Warm paper + ink neutrals. */
-  --color-basil-500: #ffd400; /* ratings, stars, highlights */
-  --color-basil-600: #b88600; /* text on basil tint */
-  --color-basil-100: #fff1b8; /* basil tint (icon discs, rating boxes) */
+  /* Base palette (light). */
+  --color-paper: #f7f3ea;
+  --color-card: #fffdf6;
+  --color-ink: #1c2430;
+  --color-muted: #757064;
+  --color-hair: #e5decc;
 
-  --color-chili-500: #e02d1b; /* downvote / destructive / errors */
-  --color-chili-600: #c73a1d;
+  /* Tier seals + signal accents. */
+  --color-gold: #b98a1f;
+  --color-emerald: #1e6e5c;
+  --color-tierslate: #5f6b76;
+  --color-oxblood: #8e2f3c;
 
-  --color-ink-900: #141414;
-  --color-ink-600: #5a5347;
-  --color-ink-300: #c9c1b0;
-  --color-ink-100: #fff8ec;
-  --color-ink-0: #fffdf6;
+  /* Semantic aliases (upvote/downvote/focus/primary). */
+  --color-up: var(--color-emerald);
+  --color-down: var(--color-oxblood);
+  --color-accent: var(--color-emerald);
 
-  /* Semantic aliases so every component re-themes from one place. */
-  --color-canvas: var(--color-ink-100);
-  --color-surface: var(--color-ink-0);
-  --color-ink: var(--color-ink-900);
-  --color-muted: var(--color-ink-600);
-  --color-line: var(--color-ink-900);
-  --color-accent: #ff4d00;
-  --color-accent-soft: #ffe3d6;
-  --color-up: #1f5cff;
-  --color-up-soft: #dde6ff;
-  --color-down: var(--color-chili-500);
-  --color-gold: var(--color-basil-500);
+  /* Hard-offset elevation: nothing at rest, solid ink offset on hover. */
+  --shadow-hard-sm: 3px 3px 0 0 var(--color-ink);
+  --shadow-hard-md: 5px 5px 0 0 var(--color-ink);
 
-  /* Brutalist hard-offset elevation: resting vs hover — nothing softer. */
-  --shadow-card: 4px 4px 0 0 var(--color-ink-900);
-  --shadow-card-hover: 8px 8px 0 0 var(--color-ink-900);
-
-  /* Sharp corners everywhere. */
-  --radius-md: 0.125rem;
-  --radius-lg: 0.25rem;
-
-  /* Indentation added per nesting level in a threaded comment tree. CommentNode
-     multiplies this by min(depth, cap) for the row's left offset, so a deep
-     thread stays readable instead of pushing content off small screens. */
-  --thread-indent: 0.5rem;
-}
-
-/* Above the md breakpoint comments have room for a roomier 24px-per-level
-   indent. Unlayered so it wins over the @layer theme token (like .dark). */
-@media (min-width: 48rem) {
-  :root {
-    --thread-indent: 1.5rem;
-  }
-}
-
-/* Unlayered so these override the @layer theme :root tokens (same specificity,
-   later wins). Every utility that references a --color-* variable re-themes. */
-.dark {
-  --color-canvas: #141414;
-  --color-surface: #1e1e1e;
-  --color-ink: #f5f0e6;
-  --color-muted: #b8b0a0;
-  --color-ink-300: #4a463e;
+  /* ---- Compatibility aliases for components not yet migrated. These map
+     old zine-era names onto Ledger values so nothing renders unstyled
+     mid-rebuild; they are deleted in the final cleanup pass. ---- */
+  --color-canvas: var(--color-paper);
+  --color-surface: var(--color-card);
   --color-line: var(--color-ink);
-  --color-accent: #ff5c2b;
-  --color-accent-soft: #3a1a0a;
-  --color-up: #6b9bff;
-  --color-up-soft: #12213f;
-  --color-down: #ff5c47;
-  --color-chili-500: #ff5c47;
-  --color-chili-600: #ff8a6b;
-  --color-basil-500: #ffe45c;
-  --color-basil-600: #ffe45c;
-  --color-basil-100: #3a2e00;
+  --color-accent-soft: color-mix(in srgb, var(--color-emerald) 12%, transparent);
+  --color-gold-soft: color-mix(in srgb, var(--color-gold) 16%, transparent);
+  --color-basil-500: var(--color-gold);
+  --color-basil-600: var(--color-gold);
+  --color-basil-100: color-mix(in srgb, var(--color-gold) 14%, var(--color-paper));
+  --color-chili-500: var(--color-oxblood);
+  --color-chili-600: var(--color-oxblood);
+}
+
+/* Dark variant — exact values from the mockup's [data-theme="dark"] block,
+   applied through the app's existing `.dark` class mechanism. Unlayered so it
+   overrides the @layer theme tokens (same specificity, later wins). */
+.dark {
+  --color-paper: #14161c;
+  --color-card: #1c2029;
+  --color-ink: #eceae2;
+  --color-muted: #9aa0ab;
+  --color-hair: #2a2f3a;
+  --color-gold: #d4a937;
+  --color-emerald: #3ba48c;
+  --color-tierslate: #8b96a3;
+  --color-oxblood: #c05565;
+  --color-up: var(--color-emerald);
+  --color-down: var(--color-oxblood);
+  --color-accent: var(--color-emerald);
+  /* compat aliases follow their parents automatically via var() above */
 }
 
 @layer base {
@@ -92,22 +87,7 @@
   }
 
   body {
-    @apply bg-canvas font-sans text-ink;
-  }
-
-  /* Zine dot-grid paper. Content sits above it via #root stacking. */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background-image: radial-gradient(
-      circle at 1px 1px,
-      color-mix(in srgb, var(--color-ink) 14%, transparent) 1px,
-      transparent 0
-    );
-    background-size: 22px 22px;
+    @apply bg-paper font-sans text-ink;
   }
 
   #root {
@@ -115,11 +95,16 @@
     z-index: 1;
   }
 
-  .font-display {
-    letter-spacing: 0.02em;
+  /* Numerals everywhere render in Plex Mono via .num (ranks, scores, counts,
+     timestamps). Components apply it directly; this base rule catches tabular
+     alignment inside tables/ledgers. */
+  .num {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
   }
 
-  /* Single consistent focus treatment across all interactive elements. */
+  /* Single consistent focus treatment. */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-accent;
   }
@@ -128,155 +113,131 @@
     filter: brightness(0.9);
   }
 
-  /* Zine street-map grid for the feed explorer: roads + park patches. */
+  /* Street-grid backdrop for the secondary MAP view (kept from the explorer). */
   .map-streets {
     background-image:
-      linear-gradient(90deg, transparent 47.5%, rgba(23, 33, 30, 0.18) 47.5%, rgba(23, 33, 30, 0.18) 52.5%, transparent 52.5%),
-      linear-gradient(0deg, transparent 30%, rgba(23, 33, 30, 0.18) 30%, rgba(23, 33, 30, 0.18) 33%, transparent 33%),
-      linear-gradient(60deg, transparent 62%, rgba(23, 33, 30, 0.14) 62%, rgba(23, 33, 30, 0.14) 64.5%, transparent 64.5%),
-      linear-gradient(-45deg, transparent 20%, rgba(23, 33, 30, 0.14) 20%, rgba(23, 33, 30, 0.14) 22%, transparent 22%),
-      linear-gradient(0deg, transparent 68%, rgba(23, 33, 30, 0.14) 68%, rgba(23, 33, 30, 0.14) 70.5%, transparent 70.5%),
-      radial-gradient(circle at 22% 78%, rgba(122, 92, 240, 0.14) 0 130px, transparent 131px),
-      radial-gradient(circle at 82% 18%, rgba(46, 158, 155, 0.16) 0 100px, transparent 101px);
-  }
-
-  /* Zine chunky borders/bevels on high-level surfaces. */
-  .hard-card {
-    @apply border-2 border-ink bg-surface shadow-card;
-    transition:
-      transform 0.15s ease-out,
-      box-shadow 0.15s ease-out;
-  }
-  .hard-card:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: var(--shadow-card-hover);
-  }
-  .hard-card:active {
-    transform: translate(2px, 2px);
-    box-shadow: 0 0 0 0 var(--color-ink-900);
-  }
-
-  .hard-btn {
-    @apply inline-flex items-center justify-center border-2 border-ink font-semibold;
-    box-shadow: 3px 3px 0 0 var(--color-ink-900);
-    transition:
-      transform 0.12s ease-out,
-      box-shadow 0.12s ease-out,
-      background-color 0.12s ease-out,
-      color 0.12s ease-out;
-  }
-  .hard-btn:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0 0 var(--color-ink-900);
-  }
-  .hard-btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 0 0 0 0 var(--color-ink-900);
-  }
-
-  /* Sticker surfaces: subtle rotation + tape-ready offset shadow. */
-  .sticker {
-    @apply border-2 border-ink bg-surface shadow-card;
-    transition:
-      transform 0.18s ease-out,
-      box-shadow 0.18s ease-out;
-  }
-  .sticker:hover {
-    transform: translate(-2px, -2px) rotate(0deg);
-    box-shadow: var(--shadow-card-hover);
-  }
-  .sticker:active {
-    transform: translate(2px, 2px);
-    box-shadow: 0 0 0 0 var(--color-ink-900);
-  }
-
-  /* Direction D comment thread: reply cards with colored depth rails. */
-  .cardn {
-    position: relative;
-    background: var(--color-surface);
-    border: 2px solid var(--color-ink);
-    box-shadow: 4px 4px 0 0 var(--color-ink-900);
-    padding: 14px 16px;
-  }
-  .cardn--deleted {
-    border-style: dashed;
-    background: var(--color-canvas);
-    opacity: 0.7;
-  }
-  .nested {
-    position: relative;
-    margin-left: 14px;
-    padding-left: 16px;
-  }
-  .nested > .bg-line {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 6px;
-  }
-  @media (max-width: 640px) {
-    .nested {
-      margin-left: 8px;
-      padding-left: 10px;
-    }
-    .nested > .bg-line {
-      width: 5px;
-    }
-  }
-
-  .zine-select option {
-    background: var(--color-surface);
-    color: var(--color-ink);
-  }
-
-  /* Semi-transparent tape strip pinned across a sticker's top edge. */
-  .tape {
-    position: absolute;
-    top: -11px;
-    left: 50%;
-    width: 88px;
-    height: 22px;
-    transform: translateX(-50%) rotate(-3deg);
-    background: linear-gradient(
-      105deg,
-      color-mix(in srgb, var(--color-gold, var(--color-basil-500)) 55%, transparent),
-      color-mix(in srgb, var(--color-gold, var(--color-basil-500)) 70%, transparent)
-    );
-    border: 1px solid color-mix(in srgb, var(--color-ink) 30%, transparent);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-    transition: transform 0.3s ease;
-    z-index: 2;
-  }
-  .sticker:hover .tape,
-  .group:hover .tape {
-    transform: translateX(-50%) rotate(2deg) scale(1.05);
-  }
-
-  /* Spinning starburst badge for "NEW" / featured stickers. */
-  .starburst {
-    font-family: var(--font-display);
-    text-transform: uppercase;
-    color: var(--color-ink);
-    background: var(--color-basil-500);
-    border: 2px solid var(--color-ink);
-    display: grid;
-    place-items: center;
-    text-align: center;
-    line-height: 1.05;
-    letter-spacing: 0.02em;
-    clip-path: polygon(
-      50% 0, 61% 12%, 76% 6%, 79% 22%, 94% 25%, 88% 39%, 100% 50%, 88% 61%,
-      94% 75%, 79% 78%, 76% 94%, 61% 88%, 50% 100%, 39% 88%, 24% 94%, 21% 78%,
-      6% 75%, 12% 61%, 0 50%, 12% 39%, 6% 25%, 21% 22%, 24% 6%, 39% 12%
-    );
-    box-shadow: 3px 3px 0 0 var(--color-ink-900);
+      linear-gradient(90deg, transparent 47.5%, color-mix(in srgb, var(--color-ink) 10%, transparent) 47.5%, color-mix(in srgb, var(--color-ink) 10%, transparent) 52.5%, transparent 52.5%),
+      linear-gradient(0deg, transparent 30%, color-mix(in srgb, var(--color-ink) 10%, transparent) 30%, color-mix(in srgb, var(--color-ink) 10%, transparent) 33%, transparent 33%),
+      radial-gradient(circle at 22% 78%, color-mix(in srgb, var(--color-emerald) 12%, transparent) 0 130px, transparent 131px),
+      radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--color-gold) 12%, transparent) 0 100px, transparent 101px);
   }
 }
 
+@utility panel {
+  /* The bordered ledger surface: 1.5px ink frame, flat at rest, no shadow. */
+  border-width: 1.5px;
+  border-color: var(--color-ink);
+  background: var(--color-card);
+}
+
+@utility panel-hair {
+  /* Quieter variant bounded by hairlines instead of full ink. */
+  border: 1px solid var(--color-hair);
+  background: var(--color-card);
+}
+
+@layer components {
+  /* Hard-edged button: crisp press, solid offset shadow snapping in on hover.
+     Interaction feedback stays fast (120–160ms) per the motion spec. */
+  .btn-hard {
+    @apply inline-flex items-center justify-center gap-2 font-semibold;
+    border: 1.5px solid var(--color-ink);
+    background: var(--color-card);
+    color: var(--color-ink);
+    transition:
+      transform 0.13s ease-out,
+      box-shadow 0.13s ease-out,
+      background-color 0.13s ease-out,
+      color 0.13s ease-out;
+  }
+  .btn-hard:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-hard-sm);
+  }
+  .btn-hard:active {
+    transform: translate(1px, 1px);
+    box-shadow: none;
+  }
+  .btn-hard:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-hard-primary {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .btn-hard-primary:hover {
+    box-shadow: 3px 3px 0 0 var(--color-gold);
+  }
+
+  /* Mono uppercase micro-label: kickers, filter labels, depth chips, folio marks. */
+  .micro-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  /* Section kicker with trailing hairline. */
+  .kicker-line {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1.15rem;
+  }
+  .kicker-line::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-hair);
+  }
+
+  /* Tier seal: circular stamped ring, rotated like pressed by hand. */
+  .seal-stamp {
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--color-card);
+    transform: rotate(-8deg);
+    font-family: var(--font-mono);
+  }
+
+  /* Corner-notch connector tying an inset reply card to its parent. */
+  .reply-notch::before {
+    content: "";
+    position: absolute;
+    left: -0.6rem;
+    top: 1rem;
+    width: 0.6rem;
+    height: 0.9rem;
+    background: var(--color-paper);
+    border-left: 1px solid var(--color-hair);
+    border-bottom: 1px solid var(--color-hair);
+  }
+
+  /* Ledger row hover edge — tier color slides in from the left spine.
+     Stagger entrance on first paint of a ledger page (reduced-motion kills it). */
+  .ledger-row[data-stagger] {
+    animation: fade-slide-in 0.35s ease-out backwards;
+  }
+  .ledger-row:hover .edge-bar {
+    background: var(--tier-edge, transparent);
+  }
+}
+
+/* Native select options inherit the paper theme (Chromium). */
+select option {
+  background: var(--color-card);
+  color: var(--color-ink);
+}
+
 /*
- * Interaction/motion layer. All durations stay 120-250ms (skeleton shimmer and
- * the marquee excepted); entering elements ease-out, leaving elements ease-in.
+ * Motion layer — restrained, mechanical, civic-ledger. Interaction feedback
+ * runs 120–200ms; entrance/decorative runs 300–600ms; nothing springy.
  */
 @keyframes page-in {
   from {
@@ -322,27 +283,61 @@
   }
 }
 
-@keyframes vote-pop {
+/* freshdot: poll-refresh pulse on newly-active ledger rows (mockup-exact). */
+@keyframes ping {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-emerald) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 9px rgba(30, 110, 92, 0);
+  }
+}
+
+/* newflash: live-inserted comment highlight fading back to paper (mockup-exact). */
+@keyframes newflash {
+  0% {
+    background: color-mix(in srgb, var(--color-emerald) 14%, var(--color-paper));
+  }
+  100% {
+    background: var(--color-paper);
+  }
+}
+
+/* Tier seals land like a stamp: quick scale-down settling into resting tilt. */
+@keyframes stamp-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.25) rotate(-14deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.97) rotate(-7deg);
+  }
+  100% {
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+/* Crisp tick for vote presses — closer to a stamp than a bounce. */
+@keyframes tick-pop {
   0% {
     transform: scale(1);
   }
-  40% {
-    transform: scale(1.35);
+  45% {
+    transform: scale(1.22);
   }
   100% {
     transform: scale(1);
   }
 }
 
-@keyframes save-pop {
+/* Save heart: precise fill/scale settle, deliberately unplayful. */
+@keyframes save-settle {
   0% {
     transform: scale(1);
   }
-  30% {
-    transform: scale(1.4) rotate(-8deg);
-  }
-  60% {
-    transform: scale(0.88);
+  40% {
+    transform: scale(1.14);
   }
   100% {
     transform: scale(1);
@@ -360,16 +355,20 @@
   }
 }
 
-@keyframes skeleton-shimmer {
-  100% {
-    transform: translateX(100%);
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
-/* Zine additions */
-@keyframes marquee {
-  to {
-    transform: translateX(-50%);
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
   }
 }
 
@@ -386,43 +385,6 @@
   }
 }
 
-@keyframes pop-in {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes blink-dot {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.25;
-  }
-}
-
-@keyframes glow-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 2px var(--color-accent);
-  }
-  50% {
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 45%, transparent);
-  }
-}
-
-@keyframes spin-slow {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 @keyframes pop-rotate {
   from {
     opacity: 0;
@@ -434,30 +396,13 @@
   }
 }
 
-@keyframes blob-drift {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(30px, -22px) scale(1.08);
-  }
-  66% {
-    transform: translate(-18px, 18px) scale(0.95);
-  }
+@keyframes glow-pulse {
+  0%,
   100% {
-    transform: translate(0, 0) scale(1);
-  }
-}
-
-@keyframes glyph-float {
-  0% {
-    transform: translateY(0) rotate(-6deg);
+    box-shadow: 0 0 0 2px var(--color-gold);
   }
   50% {
-    transform: translateY(-70vh) rotate(8deg);
-  }
-  100% {
-    transform: translateY(-140vh) rotate(-6deg);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-gold) 45%, transparent);
   }
 }
 
@@ -473,63 +418,56 @@
 .animate-toast-out {
   animation: toast-out 0.2s ease-in;
 }
-.animate-vote-pop {
-  animation: vote-pop 0.18s ease-out;
+.animate-ping-fresh {
+  animation: ping 1.8s ease-out infinite;
 }
-.animate-save-pop {
-  animation: save-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+.animate-newflash {
+  animation: newflash 2.2s ease-out;
+}
+.animate-stamp-in {
+  animation: stamp-in 0.32s cubic-bezier(0.2, 0.85, 0.35, 1) backwards;
+}
+.animate-tick-pop {
+  animation: tick-pop 0.16s ease-out;
+}
+.animate-save-settle {
+  animation: save-settle 0.2s ease-out;
 }
 .animate-score-in {
   animation: score-in 0.2s ease-out;
 }
 .animate-pop-in {
-  animation: pop-in 0.18s ease-out;
+  animation: pop-in 0.16s ease-out;
 }
 .animate-wiggle {
   animation: wiggle 0.4s ease-in-out;
 }
-.animate-blink-dot {
-  animation: blink-dot 1.2s ease-in-out infinite;
+.animate-pop-rotate {
+  animation: pop-rotate 0.28s ease-out backwards;
 }
 .animate-glow-pulse {
   animation: glow-pulse 1.4s ease-in-out infinite;
 }
-.animate-spin-slow {
-  animation: spin-slow 12s linear infinite;
-}
-.animate-pop-rotate {
-  animation: pop-rotate 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-}
-.animate-blob-drift {
-  animation: blob-drift 18s ease-in-out infinite;
-}
-.animate-glyph-float {
-  animation: glyph-float linear infinite;
-}
-.marquee-track {
-  animation: marquee 16s linear infinite;
-}
-/* Cards with a stagger delay must hold their hidden "from" frame during the
-   delay, otherwise they flash fully-opaque before their turn to fade in. */
+/* Cards with a stagger delay hold their hidden "from" frame until their turn. */
 .stagger-fill {
   animation-fill-mode: backwards;
 }
 
-/* Shimmering placeholder that matches the dimensions of real content. */
+/* Shimmering placeholder tinted in paper/hairline — never generic gray. */
 .skeleton {
   position: relative;
   overflow: hidden;
-  background-color: color-mix(in srgb, var(--color-ink-300) 40%, transparent);
+  background-color: color-mix(in srgb, var(--color-hair) 70%, transparent);
 }
 .skeleton::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
   background-image: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--color-surface) 65%, transparent),
+    color-mix(in srgb, var(--color-card) 80%, transparent),
     transparent
   );
   animation: skeleton-shimmer 1.5s linear infinite;

@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { createReview } from '../api/restaurants'
-import { useToast } from '../context/ToastContext'
-import { apiErrorMessage, extractFieldErrors, hasFieldErrors } from '../utils/apiError'
 import Spinner from './Spinner'
+import { apiErrorMessage } from '../utils/apiError'
 
-const STAR_LABELS = ['', 'Terrible', 'Poor', 'Average', 'Good', 'Excellent']
+const STAR_LABELS = { 1: 'Awful', 2: 'Poor', 3: 'Good', 4: 'Great', 5: 'Exceptional' }
 
 /**
- * Star picker + textarea for writing a review. Renders nothing special about
- * auth; the parent decides whether to show it.
+ * The review composer on the Dossier: serif invitation, oversized star picker,
+ * hairline field with INLINE field-level validation (rating + content) and no
+ * visible character counter — maxLength stays enforced silently. Submit shows
+ * a loading state while the request is in flight.
  */
 export default function ReviewForm({ restaurantId, onCreated }) {
-  const notify = useToast()
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
   const [content, setContent] = useState('')
@@ -19,28 +19,25 @@ export default function ReviewForm({ restaurantId, onCreated }) {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  const displayed = hoverRating || rating
+
   const handleSubmit = async (event) => {
     event.preventDefault()
-    if (rating < 1) {
+    if (!rating) {
+      // Client-side: the star verdict is required before anything posts.
       setFieldErrors({ rating: 'Please select a star rating.' })
-      setError('')
       return
     }
-    setFieldErrors({})
-    setError('')
+
     setSubmitting(true)
+    setError('')
     try {
-      await createReview(restaurantId, { rating, content })
-      notify('Review posted')
-      setRating(0)
-      setContent('')
+      await createReview(restaurantId, { rating, content: content.trim() })
       onCreated?.()
     } catch (err) {
-      if (hasFieldErrors(err)) {
-        setFieldErrors(extractFieldErrors(err))
-        setError('')
+      if (err.response?.data?.fieldErrors) {
+        setFieldErrors(err.response.data.fieldErrors)
       } else {
-        setFieldErrors({})
         setError(apiErrorMessage(err, 'Failed to submit review.'))
       }
     } finally {
@@ -48,14 +45,14 @@ export default function ReviewForm({ restaurantId, onCreated }) {
     }
   }
 
-  const displayed = hoverRating || rating
-
   return (
-    <form onSubmit={handleSubmit} className="sticker relative p-4">
-      <span className="tape" aria-hidden="true" />
-      <h2 className="font-display text-lg font-semibold uppercase tracking-wide text-ink">Write a review</h2>
+    <form onSubmit={handleSubmit} className="panel p-5" aria-label="Write a review">
+      <h3 className="font-serif text-lg font-semibold text-ink">Been here? Add your verdict.</h3>
+      <p className="mt-1 text-sm font-medium text-muted">
+        Rate what you ate — then the discussion starts under your review.
+      </p>
 
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <div className="flex" onMouseLeave={() => setHoverRating(0)}>
           {[1, 2, 3, 4, 5].map((value) => (
             <button
@@ -64,20 +61,21 @@ export default function ReviewForm({ restaurantId, onCreated }) {
               onClick={() => setRating(value)}
               onMouseEnter={() => setHoverRating(value)}
               aria-label={`${value} stars`}
-              className={`-m-1 rounded p-1 text-3xl leading-none transition duration-150 ease-out hover:scale-110 active:scale-90 ${
-                value <= displayed ? 'text-basil-500' : 'text-ink-300 hover:text-basil-600'
-              }`}
+              className="p-1 text-3xl leading-none transition-transform duration-150 hover:-translate-y-0.5"
+              style={{ color: value <= displayed ? 'var(--color-gold)' : 'var(--color-hair)' }}
             >
               ★
             </button>
           ))}
         </div>
-        <span className="text-sm font-semibold text-muted">
+        <span className="font-serif text-sm italic text-muted">
           {rating > 0 ? STAR_LABELS[rating] : 'Select a rating'}
         </span>
       </div>
       {fieldErrors.rating && (
-        <p className="mt-1 text-xs font-semibold text-chili-600">{fieldErrors.rating}</p>
+        <p role="alert" className="mt-1 text-xs font-semibold text-down">
+          {fieldErrors.rating}
+        </p>
       )}
 
       <textarea
@@ -86,27 +84,25 @@ export default function ReviewForm({ restaurantId, onCreated }) {
         maxLength={2000}
         rows={4}
         placeholder="What did you eat? How was the service? Would you go back?"
-        className={`mt-3 w-full resize-y border-2 bg-canvas px-3 py-2 font-serif text-base leading-relaxed text-ink placeholder:text-muted focus:outline-none ${
-          fieldErrors.content ? 'border-chili-500' : 'border-ink focus:border-accent'
+        className={`mt-3 w-full resize-y border-[1.5px] bg-paper px-3 py-2 font-serif text-base leading-relaxed text-ink placeholder:text-muted focus:outline-none ${
+          fieldErrors.content ? 'border-down' : 'border-hair focus:border-ink'
         }`}
       />
       {fieldErrors.content && (
-        <p className="mt-1 text-xs font-semibold text-chili-600">{fieldErrors.content}</p>
+        <p role="alert" className="mt-1 text-xs font-semibold text-down">
+          {fieldErrors.content}
+        </p>
       )}
 
       {error && (
-        <div className="animate-fade-slide-in mt-2 border-2 border-chili-500 bg-surface px-3 py-2 text-sm font-semibold text-chili-600 shadow-card">
+        <div role="alert" className="animate-fade-slide-in mt-3 border-[1.5px] border-down bg-card px-3 py-2 text-sm font-semibold text-down">
           {error}
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="hard-btn mt-3 border-2 bg-accent px-4 py-2 text-sm text-surface disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <button type="submit" disabled={submitting} className="btn-hard btn-hard-primary mt-4 px-5 py-2.5 text-sm disabled:opacity-60">
         {submitting && <Spinner />}
-        {submitting ? 'Submitting…' : 'Post review'}
+        {submitting ? 'Posting…' : 'Post review'}
       </button>
     </form>
   )

@@ -113,31 +113,28 @@ describe('CommentNode threading indentation', () => {
     useAuth.mockReturnValue({ isAuthenticated: true, user: { id: 'me' } })
   })
 
-  it('adds one fixed thread-indent step per level up to the mobile cap', () => {
-    const shallow = renderNode(baseComment(), { depth: 2 })
-    expect(shallow.container.firstChild.style.paddingLeft).toBe('calc(1 * var(--thread-indent))')
+  it('floors the nesting: depth chips carry the signal instead of growing indents', () => {
+    // Depth chip labels the level (L1 for first replies, L2… onward).
+    const reply = renderNode(baseComment(), { depth: 1 })
+    expect(reply.container.firstChild.querySelector('.depth')?.textContent).toBe('L1')
 
-    const atCap = renderNode(baseComment(), { depth: 5 })
-    expect(atCap.container.firstChild.style.paddingLeft).toBe('calc(1 * var(--thread-indent))')
+    const deeper = renderNode(baseComment(), { depth: 3 })
+    expect(deeper.container.firstChild.querySelector('.depth')?.textContent).toBe('L3')
 
-    const capped = renderNode(baseComment(), { depth: 6 })
-    expect(capped.container.firstChild.style.paddingLeft).toBe('calc(0 * var(--thread-indent))')
+    // Past the floor the inset stays constant — no inline padding math at all.
+    const atFloor = renderNode(baseComment(), { depth: 6 })
+    expect(atFloor.container.firstChild.style.paddingLeft).toBe('')
+    expect(atFloor.container.firstChild.querySelector('.depth')?.textContent).toBe('L6')
   })
 
-  it('uses a deeper cap on desktop', () => {
-    const at8 = renderNode(baseComment(), { depth: 8, isDesktop: true })
-    expect(at8.container.firstChild.style.paddingLeft).toBe('calc(1 * var(--thread-indent))')
+  it('roots render without a depth chip; every card uses the corner-notch connector', () => {
+    const root = renderNode(baseComment())
+    expect(root.container.firstChild.querySelector('.depth')).toBeNull()
+    expect(root.container.firstChild.querySelector('.reply-notch')).not.toBeNull()
 
-    const cappedAt9 = renderNode(baseComment(), { depth: 9, isDesktop: true })
-    expect(cappedAt9.container.firstChild.style.paddingLeft).toBe('calc(0 * var(--thread-indent))')
-  })
-
-  it('draws the connector line only under comments that have replies', () => {
     const withReplies = renderNode(baseComment({ replies: [baseComment({ id: 'r1' })] }))
-    expect(withReplies.container.firstChild.querySelector('.bg-line')).not.toBeNull()
-
-    const leaf = renderNode(baseComment())
-    expect(leaf.container.firstChild.querySelector('.bg-line')).toBeNull()
+    // Both the node itself and (after expansion) its child carry notched cards.
+    expect(withReplies.container.querySelectorAll('.reply-notch').length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders comment text with overflow-wrap so long tokens cannot overflow', () => {

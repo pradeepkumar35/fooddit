@@ -45,28 +45,28 @@ export default function SignupPage() {
   }
 
   const fieldClass = (name) =>
-    `w-full border-2 px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none ${
-      fieldErrors[name] ? 'border-chili-500 bg-surface' : 'border-ink bg-canvas focus:border-accent'
+    `w-full border-[1.5px] px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors duration-150 focus:outline-none ${
+      fieldErrors[name] ? 'border-down bg-card' : 'border-hair bg-paper focus:border-inkent'
     }`
 
   return (
     <div className="mx-auto mt-12 w-full max-w-md px-4">
-      <div className="sticker relative p-6 sm:p-8">
-        <span className="tape" aria-hidden="true" />
-        <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-ink">Create your account</h1>
+      <div className="panel relative mt-2 p-6 sm:p-8">
+        
+        <h1 className="font-serif text-3xl font-bold tracking-tight text-ink">Create your account</h1>
         <p className="mb-6 mt-1 text-sm font-semibold text-muted">
           Join Fooddit to review and discuss restaurants.
         </p>
 
         {error && (
-          <div className="mb-4 border-2 border-chili-500 bg-surface px-3 py-2 text-sm font-semibold text-chili-600 shadow-card">
+          <div className="mb-4 border-l-4 border border-hair bg-card px-3 py-2 text-sm font-semibold text-down">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="name" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+            <label htmlFor="name" className="micro-label mb-1 block">
               Name
             </label>
             <input
@@ -78,11 +78,11 @@ export default function SignupPage() {
               className={fieldClass('name')}
               placeholder="Jane Foodie"
             />
-            {fieldErrors.name && <p className="mt-1 text-xs font-semibold text-chili-600">{fieldErrors.name}</p>}
+            {fieldErrors.name && <p className="mt-1 text-xs font-semibold text-down">{fieldErrors.name}</p>}
           </div>
 
           <div>
-            <label htmlFor="email" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+            <label htmlFor="email" className="micro-label mb-1 block">
               Email
             </label>
             <input
@@ -94,11 +94,11 @@ export default function SignupPage() {
               className={fieldClass('email')}
               placeholder="you@example.com"
             />
-            {fieldErrors.email && <p className="mt-1 text-xs font-semibold text-chili-600">{fieldErrors.email}</p>}
+            {fieldErrors.email && <p className="mt-1 text-xs font-semibold text-down">{fieldErrors.email}</p>}
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+            <label htmlFor="password" className="micro-label mb-1 block">
               Password
             </label>
             <input
@@ -112,14 +112,14 @@ export default function SignupPage() {
               placeholder="At least 8 characters"
             />
             {fieldErrors.password && (
-              <p className="mt-1 text-xs font-semibold text-chili-600">{fieldErrors.password}</p>
+              <p className="mt-1 text-xs font-semibold text-down">{fieldErrors.password}</p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="hard-btn flex w-full items-center justify-center gap-2 border-2 bg-accent py-2 text-sm text-surface disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-hard btn-hard-primary flex w-full items-center justify-center gap-2 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <Spinner />}
             {submitting ? 'Creating account…' : 'Sign up'}
@@ -128,7 +128,7 @@ export default function SignupPage() {
 
         <p className="mt-6 text-center text-sm font-semibold text-muted">
           Already have an account?{' '}
-          <Link to="/login" className="font-bold text-accent transition-colors duration-150 hover:underline">
+          <Link to="/login" className="font-bold text-emerald transition-colors duration-150 hover:underline">
             Log in
           </Link>
         </p>

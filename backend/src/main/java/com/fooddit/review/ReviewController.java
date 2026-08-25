@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,10 +28,15 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
+    /**
+     * The Dossier review stream. {@code sort}: best (net score, newest
+     * tiebreak — default), top (star rating desc) or new (chronological).
+     */
     @GetMapping("/restaurants/{restaurantId}/reviews")
     public List<ReviewDto> listByRestaurant(@PathVariable UUID restaurantId,
+                                            @RequestParam(required = false, defaultValue = "new") String sort,
                                             @AuthenticationPrincipal Object principal) {
-        return reviewService.listByRestaurant(restaurantId, CurrentUser.orNull(principal));
+        return reviewService.listByRestaurant(restaurantId, sort, CurrentUser.orNull(principal));
     }
 
     @PostMapping("/restaurants/{restaurantId}/reviews")

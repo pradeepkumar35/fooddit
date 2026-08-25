@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -37,4 +38,23 @@ public interface VoteRepository extends JpaRepository<Vote, UUID> {
     List<Vote> findByUserAndVotableTypeAndVotableIdIn(@Param("userId") UUID userId,
                                                       @Param("type") VotableType type,
                                                       @Param("votableIds") Collection<UUID> votableIds);
+
+    /**
+     * Vote count cast since {@code since} per review id — feeds the Ledger's
+     * "votes this month" delta (aggregated to restaurants by the caller).
+     */
+    @Query("""
+            select v.votableId as votableId, count(v) as cnt
+            from Vote v
+            where v.votableType = 'REVIEW' and v.votableId in :reviewIds and v.createdAt >= :since
+            group by v.votableId
+            """)
+    List<RecentCount> countRecentByReviewIds(@Param("reviewIds") Collection<UUID> reviewIds,
+                                             @Param("since") Instant since);
+
+    interface RecentCount {
+        UUID getVotableId();
+
+        long getCnt();
+    }
 }

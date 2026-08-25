@@ -33,24 +33,24 @@ export default function LoginPage() {
   }
 
   const fieldClass =
-    'w-full border-2 border-ink bg-canvas px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none'
+    'w-full border-[1.5px] border-hair bg-paper px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none'
 
   return (
     <div className="mx-auto mt-12 w-full max-w-md px-4">
-      <div className="sticker relative p-6 sm:p-8">
-        <span className="tape" aria-hidden="true" />
-        <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-ink">Log in</h1>
+      <div className="panel relative mt-2 p-6 sm:p-8">
+        
+        <h1 className="font-serif text-3xl font-bold tracking-tight text-ink">Log in</h1>
         <p className="mb-6 mt-1 text-sm font-semibold text-muted">Welcome back to Fooddit.</p>
 
         {error && (
-          <div className="mb-4 border-2 border-chili-500 bg-surface px-3 py-2 text-sm font-semibold text-chili-600 shadow-card">
+          <div className="mb-4 border-l-4 border border-hair bg-card px-3 py-2 text-sm font-semibold text-down">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+            <label htmlFor="email" className="micro-label mb-1 block">
               Email
             </label>
             <input
@@ -65,7 +65,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+            <label htmlFor="password" className="micro-label mb-1 block">
               Password
             </label>
             <input
@@ -80,7 +80,7 @@ export default function LoginPage() {
             <div className="mt-1 text-right">
               <Link
                 to="/forgot-password"
-                className="text-xs font-bold text-muted transition-colors duration-150 hover:text-accent"
+                className="text-xs font-bold text-muted transition-colors duration-150 hover:text-emerald"
               >
                 Forgot password?
               </Link>
@@ -90,7 +90,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="hard-btn flex w-full items-center justify-center gap-2 border-2 bg-accent py-2 text-sm text-surface disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-hard btn-hard-primary flex w-full items-center justify-center gap-2 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <Spinner />}
             {submitting ? 'Logging in…' : 'Log in'}
@@ -99,7 +99,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm font-semibold text-muted">
           New to Fooddit?{' '}
-          <Link to="/signup" className="font-bold text-accent transition-colors duration-150 hover:underline">
+          <Link to="/signup" className="font-bold text-emerald transition-colors duration-150 hover:underline">
             Create an account
           </Link>
         </p>

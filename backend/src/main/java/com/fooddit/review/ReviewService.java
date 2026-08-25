@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,11 +37,36 @@ public class ReviewService {
     private final VoteService voteService;
     private final LiveEventPublisher liveEventPublisher;
 
+    /**
+     * Reviews for the Dossier stream. {@code sort}: best (net score desc,
+     * newest tiebreak — the default view), top (star rating desc, then score),
+     * new (chronological). Scores are fetched once and reused for both sorting
+     * and enrichment.
+     */
     @Transactional(readOnly = true)
-    public List<ReviewDto> listByRestaurant(UUID restaurantId, UUID currentUserId) {
+    public List<ReviewDto> listByRestaurant(UUID restaurantId, String sort, UUID currentUserId) {
         restaurantService.findRestaurant(restaurantId); // 404 if the restaurant does not exist
         List<Review> reviews = reviewRepository.findByRestaurantIdOrderByCreatedAtDesc(restaurantId);
-        return toDtos(reviews, currentUserId);
+        List<UUID> ids = reviews.stream().map(Review::getId).toList();
+        Map<UUID, Integer> scores = voteService.scoresFor(VotableType.REVIEW, ids);
+        Map<UUID, Integer> myVotes = voteService.myVotes(currentUserId, VotableType.REVIEW, ids);
+
+        Comparator<Review> byNewest = Comparator.comparing(Review::getCreatedAt).reversed();
+        Comparator<Review> comparator = switch (sort == null ? "new" : sort.toLowerCase()) {
+            case "top" -> Comparator
+                    .comparingInt((Review r) -> r.getRating() == null ? 0 : r.getRating()).reversed()
+                    .thenComparing(r -> scores.getOrDefault(r.getId(), 0), Comparator.reverseOrder())
+                    .thenComparing(byNewest);
+            case "best" -> Comparator
+                    .comparing((Review r) -> scores.getOrDefault(r.getId(), 0)).reversed()
+                    .thenComparing(byNewest);
+            default -> byNewest;
+        };
+
+        return reviews.stream()
+                .sorted(comparator)
+                .map(r -> ReviewDto.from(r, scores.getOrDefault(r.getId(), 0), myVotes.get(r.getId())))
+                .toList();
     }
 
     public Review findReview(UUID id) {
@@ -92,15 +118,6 @@ public class ReviewService {
             recalculateAverageRating(review.getRestaurant());
         }
         return ReviewDto.from(review);
-    }
-
-    private List<ReviewDto> toDtos(List<Review> reviews, UUID currentUserId) {
-        List<UUID> ids = reviews.stream().map(Review::getId).toList();
-        Map<UUID, Integer> scores = voteService.scoresFor(VotableType.REVIEW, ids);
-        Map<UUID, Integer> myVotes = voteService.myVotes(currentUserId, VotableType.REVIEW, ids);
-        return reviews.stream()
-                .map(r -> ReviewDto.from(r, scores.getOrDefault(r.getId(), 0), myVotes.get(r.getId())))
-                .toList();
     }
 
     /**

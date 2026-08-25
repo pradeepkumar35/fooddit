@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +31,49 @@ public class UserProfileService {
     private final ReviewRepository reviewRepository;
     private final CommentRepository commentRepository;
     private final VoteService voteService;
+
+    /**
+     * Lifetime reputation: net upvotes received across the user's own reviews
+     * and comments. Real, derived data — no self-reported score. Pure JPQL so
+     * it behaves identically on H2 and Postgres.
+     */
+    @Transactional(readOnly = true)
+    public long reputation(UUID userId) {
+        return reputations(List.of(userId)).getOrDefault(userId, 0L);
+    }
+
+    /** Batched reputation lookup for a set of authors (review/comment cards). */
+    @Transactional(readOnly = true)
+    public Map<UUID, Long> reputations(Collection<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> ids = List.copyOf(userIds);
+        Map<UUID, Long> out = new HashMap<>();
+
+        List<Object[]> reviewPairs = reviewRepository.findAuthorAndIdByAuthorIds(ids);
+        if (!reviewPairs.isEmpty()) {
+            List<UUID> reviewIds = reviewPairs.stream().map(p -> (UUID) p[1]).toList();
+            Map<UUID, Integer> scores = voteService.scoresFor(VotableType.REVIEW, reviewIds);
+            for (Object[] pair : reviewPairs) {
+                UUID authorId = (UUID) pair[0];
+                int score = scores.getOrDefault((UUID) pair[1], 0);
+                out.merge(authorId, (long) score, Long::sum);
+            }
+        }
+
+        List<Object[]> commentPairs = commentRepository.findAuthorAndIdByAuthorIds(ids);
+        if (!commentPairs.isEmpty()) {
+            List<UUID> commentIds = commentPairs.stream().map(p -> (UUID) p[1]).toList();
+            Map<UUID, Integer> scores = voteService.scoresFor(VotableType.COMMENT, commentIds);
+            for (Object[] pair : commentPairs) {
+                UUID authorId = (UUID) pair[0];
+                int score = scores.getOrDefault((UUID) pair[1], 0);
+                out.merge(authorId, (long) score, Long::sum);
+            }
+        }
+        return out;
+    }
 
     /**
      * Assembles a user's profile. Reviews and comments are loaded with their
@@ -77,6 +122,6 @@ public class UserProfileService {
                         myCommentVotes.get(c.getId())))
                 .toList();
 
-        return new UserProfileDto(UserDto.from(user), reviewDtos, commentDtos);
+        return new UserProfileDto(UserDto.from(user), reputation(userId), reviewDtos, commentDtos);
     }
 }

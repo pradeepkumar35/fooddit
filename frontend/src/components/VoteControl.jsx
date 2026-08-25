@@ -6,12 +6,10 @@ import { useToast } from '../context/ToastContext'
 import { subscribe } from '../lib/live'
 
 /**
- * Reddit-style upvote/downvote with toggle semantics, used by review posts and
- * comments alike. Arrows are outline when unvoted and filled when the user has
- * voted; color is the primary feedback (accent = upvote, slate = downvote).
- * Clicking bounces the arrow, the score fades/slides to its new value, and a
- * toast acknowledges the vote. Anonymous clicks are redirected to /login,
- * preserving the return path.
+ * Upvote/downvote with toggle semantics as one bordered ledger cluster
+ * [▲ | score | ▼]. Presses land like a stamp (crisp tick, no bounce), the
+ * score crossfades between values, live votes from other clients update the
+ * tally in place, and anonymous clicks redirect to /login preserving the path.
  */
 export default function VoteControl({ votableType, votableId, initialScore, initialMyVote, size = 'md' }) {
   const { isAuthenticated } = useAuth()
@@ -24,15 +22,12 @@ export default function VoteControl({ votableType, votableId, initialScore, init
   const [error, setError] = useState('')
   const [pop, setPop] = useState({ dir: null, n: 0 })
 
-  // Follow refreshed props (e.g. after a thread reload) so a stale initial value
-  // never persists for this votable.
   useEffect(() => {
     setScore(initialScore)
     setMyVote(initialMyVote)
   }, [initialScore, initialMyVote])
 
-  // Live vote from another client: update the visible tally in-place. We only
-  // touch the score (myVote is viewer-specific and not part of the broadcast).
+  // Live vote from another client: update the visible tally in-place.
   useEffect(() => {
     return subscribe('vote.updated', (event) => {
       if (event.votableType === votableType && event.votableId === votableId) {
@@ -62,9 +57,8 @@ export default function VoteControl({ votableType, votableId, initialScore, init
     }
   }
 
-  const isChip = size === 'chip'
   const Arrow = ({ direction, active }) => {
-    const sizeClass = size === 'sm' || isChip ? 'h-3 w-3' : 'h-4 w-4'
+    const sizeClass = size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'
     const animating = pop.dir === direction
     return (
       <svg
@@ -72,7 +66,7 @@ export default function VoteControl({ votableType, votableId, initialScore, init
         viewBox="0 0 24 24"
         strokeWidth="1.75"
         strokeLinejoin="round"
-        className={`${sizeClass} ${animating ? 'animate-vote-pop' : ''}`}
+        className={`${sizeClass} ${animating ? 'animate-tick-pop' : ''}`}
         fill={active ? 'currentColor' : 'none'}
         stroke="currentColor"
       >
@@ -81,46 +75,47 @@ export default function VoteControl({ votableType, votableId, initialScore, init
     )
   }
 
-  const upClass = myVote === 1 ? 'bg-up text-surface border-up' : 'bg-surface text-muted border-ink hover:text-up'
-  const downClass = myVote === -1 ? 'bg-down text-surface border-down' : 'bg-surface text-muted border-ink hover:text-down'
-  const scoreClass =
-    myVote === 1 ? 'text-up' : myVote === -1 ? 'text-down' : 'text-ink'
-  const scoreSize = size === 'sm' ? 'text-sm' : isChip ? 'text-xs' : 'text-base'
-  const padClass = size === 'sm' ? 'p-2.5' : isChip ? 'p-1.5' : 'p-3'
-  const btnClass =
-    'flex items-center justify-center border-2 shadow-card transition duration-150 ease-out hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0.5 active:shadow-none disabled:opacity-50'
+  const pad = size === 'sm' ? 'w-8 h-7' : 'w-9 h-9'
+  const upOn = myVote === 1
+  const downOn = myVote === -1
 
   return (
-    <div className={isChip ? 'flex items-center gap-2' : 'flex flex-col items-center'}>
-      <button
-        type="button"
-        onClick={() => handleVote(1)}
-        disabled={busy}
-        aria-label="Upvote"
-        className={`${btnClass} ${padClass} ${upClass}`}
-      >
-        <Arrow direction="up" active={myVote === 1} />
-      </button>
-      <span
-        key={score}
-        className={`${scoreSize} ${
-          isChip
-            ? 'min-w-8 border-2 border-ink bg-surface px-2 py-1 text-center shadow-card'
-            : 'my-2.5'
-        } animate-score-in font-bold leading-none tabular-nums ${scoreClass}`}
-      >
-        {score}
+    <span className="inline-flex flex-col items-center">
+      <span className="inline-flex items-center border-[1.5px] border-ink bg-card">
+        <button
+          type="button"
+          onClick={() => handleVote(1)}
+          disabled={busy}
+          aria-label="Upvote"
+          aria-pressed={upOn}
+          className={`grid ${pad} place-items-center transition-colors duration-150 ${
+            upOn ? 'bg-up text-paper' : 'text-muted hover:bg-paper'
+          }`}
+        >
+          <Arrow direction="up" active={upOn} />
+        </button>
+        <span
+          key={score}
+          className={`num animate-score-in min-w-8 px-2 text-center text-[13px] font-semibold leading-none ${
+            upOn ? 'text-up' : downOn ? 'text-down' : 'text-ink'
+          }`}
+        >
+          {score}
+        </span>
+        <button
+          type="button"
+          onClick={() => handleVote(-1)}
+          disabled={busy}
+          aria-label="Downvote"
+          aria-pressed={downOn}
+          className={`grid ${pad} place-items-center transition-colors duration-150 ${
+            downOn ? 'bg-down text-paper' : 'text-muted hover:bg-paper'
+          }`}
+        >
+          <Arrow direction="down" active={downOn} />
+        </button>
       </span>
-      <button
-        type="button"
-        onClick={() => handleVote(-1)}
-        disabled={busy}
-        aria-label="Downvote"
-        className={`${btnClass} ${padClass} ${downClass}`}
-      >
-        <Arrow direction="down" active={myVote === -1} />
-      </button>
-      {error && <p className="mt-1 max-w-24 text-center text-xs font-semibold text-chili-600">{error}</p>}
-    </div>
+      {error && <span className="mt-1 max-w-28 text-center text-xs font-semibold text-down">{error}</span>}
+    </span>
   )
 }

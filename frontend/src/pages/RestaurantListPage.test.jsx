@@ -4,45 +4,61 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import RestaurantListPage from './RestaurantListPage'
 
-const restaurants = [
+const rows = [
   {
     id: 'r1',
     name: 'Dosa Dynasty',
-    address: '2 MG Road, Mumbai',
     cuisineType: 'South Indian',
-    priceRange: '₹',
-    cityName: 'Mumbai',
-    citySlug: 'mumbai',
+    cuisines: ['South Indian'],
+    locality: 'T. Nagar',
+    cityName: 'Chennai',
+    citySlug: 'chennai',
     avgRating: 4.5,
     reviewCount: 2,
-    createdAt: '2026-01-01T00:00:00Z',
+    rank: 3,
+    tier: 'ELITE',
+    commentCount: 12,
+    lastActivityAt: '2026-01-02T00:00:00Z',
+    latestReview: { authorName: 'Ravi', rating: 5, content: 'Crispest dosas around.', createdAt: '2026-01-01T00:00:00Z' },
+    monthlyVotes: 4,
     saved: false,
   },
   {
     id: 'r2',
     name: 'The Biryani Diaries',
-    address: '45 T. Nagar, Chennai',
     cuisineType: 'Hyderabadi',
-    priceRange: '₹₹',
+    locality: 'Marina Beach Rd',
     cityName: 'Chennai',
     citySlug: 'chennai',
     avgRating: 4.1,
     reviewCount: 1,
-    createdAt: '2026-01-02T00:00:00Z',
+    rank: 7,
+    tier: 'GREAT',
+    commentCount: 3,
+    lastActivityAt: null,
+    latestReview: null,
+    monthlyVotes: 0,
     saved: false,
   },
 ]
 
-const { listRestaurants, listCuisines } = vi.hoisted(() => ({
+const pageEnvelope = (content) => ({
+  content,
+  page: 0,
+  size: 30,
+  totalElements: content.length,
+  totalPages: 1,
+})
+
+const { fetchLedger, listRestaurants, listCuisines } = vi.hoisted(() => ({
+  fetchLedger: vi.fn(),
   listRestaurants: vi.fn(),
   listCuisines: vi.fn(),
 }))
-const { listLocalities } = vi.hoisted(() => ({
-  listLocalities: vi.fn(),
-}))
+const { listLocalities } = vi.hoisted(() => ({ listLocalities: vi.fn() }))
 const setActiveLocation = vi.fn()
 
-vi.mock('../api/restaurants', () => ({ listRestaurants, listCuisines }))
+vi.mock('../api/restaurants', () => ({ fetchLedger, listRestaurants, listCuisines }))
 vi.mock('../api/locations', () => ({ listLocalities }))
 vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({ user: { id: 'u1', name: 'Alice' }, isAuthenticated: false }),
@@ -52,6 +68,7 @@ vi.mock('../hooks/useLocation', () => ({
     activeCity: { citySlug: 'chennai', cityName: 'Chennai' },
     activeLocality: null,
     setActiveLocation,
+    setSwitcherOpen: vi.fn(),
     cities: [
       { citySlug: 'chennai', cityName: 'Chennai' },
       { citySlug: 'mumbai', cityName: 'Mumbai' },
@@ -67,67 +84,107 @@ const renderAt = (path) =>
     </MemoryRouter>,
   )
 
-describe('RestaurantListPage filters', () => {
+describe('RestaurantListPage — the City Ledger', () => {
   beforeEach(() => {
-    listRestaurants.mockReset().mockResolvedValue(restaurants)
+    fetchLedger.mockReset().mockResolvedValue(pageEnvelope(rows))
+    listRestaurants.mockReset().mockResolvedValue(rows)
     listCuisines.mockReset().mockResolvedValue(['South Indian', 'Hyderabadi'])
-    listLocalities.mockReset().mockResolvedValue(['MG Road', 'Marina Beach Rd'])
+    listLocalities.mockReset().mockResolvedValue([])
     setActiveLocation.mockReset()
   })
 
-  it('shows cuisine, city, locality and rating selects with All- placeholders and no price filter', () => {
+  it('renders enriched ledger rows with rank, tier seal and discussion co-headline', async () => {
     renderAt('/')
-    expect(screen.getByRole('combobox', { name: 'Filter by cuisine' })).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'Filter by city' })).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'Filter by locality' })).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'Filter by rating' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'All Cuisines' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'All Localities' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'All Ratings' })).toBeInTheDocument()
-    expect(screen.queryByRole('combobox', { name: 'Filter by price' })).not.toBeInTheDocument()
+    expect(await screen.findByText('Dosa Dynasty')).toBeInTheDocument()
+
+    expect(fetchLedger).toHaveBeenCalledTimes(1)
+    const firstCall = fetchLedger.mock.calls.at(-1)[0]
+    expect(firstCall.city).toBe('chennai')
+    expect(firstCall.sort).toBe('mostdiscussed')
+    expect(firstCall.size).toBe(30)
+
+    // Context column
+    expect(screen.getByText('3', { selector: '.num b' })).toBeInTheDocument()
+    // Discussion co-headline: snippet + comment count + activity
+    expect(screen.getByText(/Crispest dosas around/)).toBeInTheDocument()
+    expect(screen.getByText('💬 12')).toBeInTheDocument()
   })
 
-  it('defaults to the active city and sends it to the API', async () => {
+  it('keeps Most discussed as the default sort with equal alternatives', async () => {
     renderAt('/')
-    await screen.findByText('2 restaurants')
-    const lastCall = listRestaurants.mock.calls.at(-1)[0]
-    expect(lastCall.city).toBe('chennai')
-  })
+    await screen.findByText('Dosa Dynasty')
 
-  it('sends the selected city (slug) to the API and clears locality', async () => {
-    renderAt('/?locality=Marina')
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Filter by city' }), 'mumbai')
-    const lastCall = listRestaurants.mock.calls.at(-1)[0]
-    expect(lastCall.city).toBe('mumbai')
-    expect(lastCall.locality).toBeUndefined()
-  })
+    const sortRow = screen.getByRole('button', { name: 'Most discussed' })
+    expect(sortRow).toHaveAttribute('aria-pressed', 'true')
 
-  it('sends the selected locality to the API', async () => {
-    renderAt('/')
-    await screen.findByText('2 restaurants')
-    await userEvent.selectOptions(
-      screen.getByRole('combobox', { name: 'Filter by locality' }),
-      await screen.findByRole('option', { name: 'MG Road' }),
-    )
-    const lastCall = listRestaurants.mock.calls.at(-1)[0]
-    expect(lastCall.locality).toBe('MG Road')
-  })
-
-  it('sends the selected rating threshold to the API', async () => {
-    renderAt('/')
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Filter by rating' }), '4')
-    const lastCall = listRestaurants.mock.calls.at(-1)[0]
-    expect(lastCall.rating).toBe('4')
-  })
-
-  it('reads city, locality, rating, search and sort filters from the URL', async () => {
-    renderAt('/?city=chennai&locality=Marina&rating=3&q=biryani&sort=new')
-    expect(await screen.findByText('2 restaurants')).toBeInTheDocument()
-    const lastCall = listRestaurants.mock.calls.at(-1)[0]
-    expect(lastCall.city).toBe('chennai')
-    expect(lastCall.locality).toBe('Marina')
-    expect(lastCall.rating).toBe('3')
-    expect(lastCall.q).toBe('biryani')
+    await userEvent.click(screen.getByRole('button', { name: 'Newest' }))
+    const lastCall = fetchLedger.mock.calls.at(-1)[0]
     expect(lastCall.sort).toBe('new')
+    // Switching sort resets to the first page.
+    expect(lastCall.page).toBe(0)
+  })
+
+  it('sends cuisine and minimum-rating filters to the paginated query', async () => {
+    renderAt('/?cuisine=South%20Indian&rating=4&locality=T.%20Nagar')
+    await screen.findByText('Dosa Dynasty')
+
+    const params = fetchLedger.mock.calls.at(-1)[0]
+    expect(params.cuisine).toBe('South Indian')
+    expect(params.rating).toBe('4')
+    expect(params.locality).toBe('T. Nagar')
+
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Filter by cuisine' }), 'South Indian')
+    expect(fetchLedger.mock.calls.at(-1)[0].cuisine).toBe('South Indian')
+    expect(fetchLedger.mock.calls.at(-1)[0].page).toBe(0)
+
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Filter by rating' }), '3')
+    expect(fetchLedger.mock.calls.at(-1)[0].rating).toBe('3')
+  })
+
+  it('walks pages through the pager control instead of slicing client-side', async () => {
+    fetchLedger.mockResolvedValue({ ...pageEnvelope(rows), totalElements: 60, totalPages: 2 })
+    renderAt('/?page=0')
+    await screen.findByText('Dosa Dynasty')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next ›' }))
+    expect(await screen.findByText('Dosa Dynasty')).toBeInTheDocument()
+    expect(fetchLedger.mock.calls.at(-1)[0].page).toBe(1)
+  })
+
+  it('shows an empty-ledger state when a city has no matching entries', async () => {
+    fetchLedger.mockResolvedValue(pageEnvelope([]))
+    renderAt('/?city=atlantis')
+    expect(await screen.findByText('Nothing on the ledger yet')).toBeInTheDocument()
+  })
+
+  it('expands a row into its newest-review preview and dossier link', async () => {
+    renderAt('/')
+    await screen.findByText('Dosa Dynasty')
+
+    await userEvent.click(screen.getByRole('button', { name: /Show details for Dosa Dynasty/ }))
+
+    // The preview appears both as the row teaser and inside the opened panel.
+    const previews = await screen.findAllByText(/Crispest dosas around\./)
+    expect(previews.length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByRole('link', { name: /Open the dossier →/ })).toHaveAttribute(
+      'href',
+      '/restaurants/r1',
+    )
+  })
+
+  it('reads deep links from the URL without clobbering them', async () => {
+    renderAt('/?city=chennai&sort=rating&page=2')
+    await screen.findByText('Dosa Dynasty')
+    const params = fetchLedger.mock.calls.at(-1)[0]
+    expect(params.city).toBe('chennai')
+    expect(params.sort).toBe('rating')
+    expect(params.page).toBe(2)
+  })
+
+  it('still serves the MAP secondary view from the full feed endpoint', async () => {
+    renderAt('/?view=map')
+    await screen.findByLabelText(/Map of restaurants in Chennai/)
+    expect(listRestaurants).toHaveBeenCalled()
+    expect(fetchLedger).not.toHaveBeenCalled()
   })
 })

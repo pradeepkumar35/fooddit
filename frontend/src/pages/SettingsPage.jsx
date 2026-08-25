@@ -17,8 +17,9 @@ const MODE_OPTIONS = [
 ]
 
 /**
- * Account settings, in a General tab (display name) and a Preferences tab
- * (display mode and which reply notifications to receive).
+ * Account settings. The dark-mode control lives HERE and only here (the
+ * masthead never carries it) — segmented Light/Dark/System, persisted per
+ * account and mirrored to localStorage by useDarkMode.
  */
 export default function SettingsPage() {
   const { updateUser } = useAuth()
@@ -90,50 +91,44 @@ export default function SettingsPage() {
   }
 
   const fieldClass =
-    'w-full border-2 border-ink bg-canvas px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none'
+    'w-full border-[1.5px] border-hair bg-paper px-3 py-2 text-sm text-ink placeholder:text-muted transition-colors duration-150 focus:border-ink focus:outline-none'
 
   return (
-    <div className="mx-auto max-w-[1080px] px-4 pb-16 pt-6">
-      <div className="mx-auto max-w-[640px]">
-        <h1 className="font-display text-3xl font-semibold uppercase tracking-wide text-ink">Settings</h1>
+    <div className="mx-auto max-w-[1160px] px-4 pb-20 pt-7 sm:px-6">
+      <div className="mx-auto max-w-[720px]">
+        <p className="micro-label mb-1">The Ledger · account</p>
+        <h1 className="font-serif text-3xl font-bold tracking-tight text-ink">Settings</h1>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          {TABS.map((t) => {
-            const active = tab === t.value
-            return (
-              <button
-                key={t.value}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setTab(t.value)}
-                className={`border-2 border-ink px-3 py-1.5 text-sm font-bold uppercase tracking-wide transition duration-150 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none ${
-                  active ? 'bg-accent text-surface shadow-card' : 'bg-surface text-ink shadow-card hover:bg-accent-soft'
-                }`}
-              >
-                {t.label}
-              </button>
-            )
-          })}
+        <div className="mt-5 flex flex-wrap gap-2">
+          {TABS.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              aria-pressed={tab === t.value}
+              onClick={() => setTab(t.value)}
+              className={`border-[1.5px] px-3.5 py-2 text-xs font-bold uppercase tracking-wide transition duration-150 ${
+                tab === t.value ? 'border-ink bg-ink text-paper' : 'border-hair bg-card text-ink hover:border-ink'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
         {loading ? (
           <div className="mt-6 space-y-3">
-            <Skeleton className="h-12 border-2 border-ink" />
-            <Skeleton className="h-12 border-2 border-ink" />
-            <Skeleton className="h-12 border-2 border-ink" />
+            <Skeleton className="h-14 w-full border border-hair" />
+            <Skeleton className="h-14 w-full border border-hair" />
           </div>
         ) : tab === GENERAL.value ? (
-          <div className="sticker relative mt-6 p-6">
-            <span className="tape" aria-hidden="true" />
-            <h2 className="font-display text-base font-semibold uppercase tracking-wide text-ink">Display name</h2>
-            <p className="mt-1 text-sm font-semibold text-muted">
+          <div className="panel mt-6 p-6">
+            <h2 className="font-serif text-lg font-semibold text-ink">Display name</h2>
+            <p className="mt-1 text-sm font-medium text-muted">
               How your name appears on reviews, comments and your profile.
             </p>
             <form onSubmit={handleSaveName} className="mt-4 space-y-4">
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
-                  Name
-                </span>
+                <span className="micro-label mb-1 block">Name</span>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -142,89 +137,65 @@ export default function SettingsPage() {
                   aria-label="Display name"
                 />
               </label>
-              <button
-                type="submit"
-                disabled={savingName || !name.trim()}
-                className="hard-btn border-2 bg-accent px-4 py-2 text-sm text-surface disabled:opacity-50"
-              >
+              <button type="submit" disabled={savingName || !name.trim()} className="btn-hard btn-hard-primary px-4 py-2.5 text-sm disabled:opacity-50">
                 {savingName ? 'Saving…' : 'Save changes'}
               </button>
             </form>
 
-            <div className="mt-6 border-t-2 border-ink/20 pt-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted">Account</p>
-              <p className="mt-2 text-sm font-bold text-ink">Email</p>
-              <p className="text-sm font-semibold text-muted">{email}</p>
+            <div className="mt-6 border-t border-hair pt-4">
+              <p className="micro-label">Account</p>
+              <p className="mt-2 text-sm font-semibold text-ink">{email}</p>
             </div>
           </div>
         ) : (
-          <div className="mt-6 space-y-4">
-            <section className="sticker relative p-6">
-              <span className="tape" aria-hidden="true" />
-              <h2 className="font-display text-base font-semibold uppercase tracking-wide text-ink">Display mode</h2>
-              <p className="mt-1 text-sm font-semibold text-muted">
-                Choose between light, dark, or following your device setting.
+          <div className="mt-6 space-y-5">
+            <section className="panel p-6">
+              <h2 className="font-serif text-lg font-semibold text-ink">Display mode</h2>
+              <p className="mt-1 text-sm font-medium text-muted">
+                Choose light, dark, or follow your device. This is the only place the theme can be changed.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="modeseg mt-4 inline-flex border-[1.5px] border-ink" role="group" aria-label="Display mode">
                 {MODE_OPTIONS.map((option) => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => handleDisplayMode(option.value)}
                     aria-pressed={displayMode === option.value}
-                    className={`border-2 border-ink px-4 py-2 text-sm font-bold uppercase tracking-wide transition duration-150 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none ${
-                      displayMode === option.value
-                        ? 'bg-accent text-surface shadow-card'
-                        : 'bg-surface text-ink shadow-card hover:bg-accent-soft'
-                    }`}
+                    className={`px-5 py-2.5 text-sm font-semibold transition-colors duration-150 ${
+                      option !== MODE_OPTIONS[0] ? 'border-l-[1.5px] border-ink' : ''
+                    } ${displayMode === option.value ? 'bg-ink text-paper' : 'bg-card text-ink hover:bg-paper'}`}
                   >
                     {option.label}
                   </button>
                 ))}
               </div>
-              <p className="mt-3 text-xs font-semibold text-muted">
-                Current theme: {mode === 'dark' ? 'Dark' : mode === 'light' ? 'Light' : 'Following your device'}
+              <p className="num mt-3 text-xs text-muted">
+                Current: {mode === 'dark' ? 'Dark' : mode === 'light' ? 'Light' : 'Following device'}
               </p>
             </section>
 
-            <form
-              onSubmit={handleSavePreferences}
-              className="sticker relative p-6"
-            >
-              <span className="tape" aria-hidden="true" />
-              <h2 className="font-display text-base font-semibold uppercase tracking-wide text-ink">Notifications</h2>
-              <p className="mt-1 text-sm font-semibold text-muted">
-                Choose when you receive notifications for replies.
+            <form onSubmit={handleSavePreferences} className="panel p-6">
+              <h2 className="font-serif text-lg font-semibold text-ink">Notifications</h2>
+              <p className="mt-1 text-sm font-medium text-muted">
+                Choose which replies reach the bell.
               </p>
               <div className="mt-4 space-y-4">
                 <label className="flex items-center justify-between gap-4">
                   <span>
-                    <span className="block text-sm font-bold text-ink">Review replies</span>
-                    <span className="block text-xs font-semibold text-muted">When someone comments on your review</span>
+                    <span className="block text-sm font-semibold text-ink">Review replies</span>
+                    <span className="block text-xs text-muted">When someone comments on your review</span>
                   </span>
-                  <Toggle
-                    checked={notifyOnReviewReply}
-                    onChange={setNotifyOnReviewReply}
-                    label="Review replies"
-                  />
+                  <Toggle checked={notifyOnReviewReply} onChange={setNotifyOnReviewReply} label="Review replies" />
                 </label>
                 <label className="flex items-center justify-between gap-4">
                   <span>
-                    <span className="block text-sm font-bold text-ink">Comment replies</span>
-                    <span className="block text-xs font-semibold text-muted">When someone replies to your comment</span>
+                    <span className="block text-sm font-semibold text-ink">Comment replies</span>
+                    <span className="block text-xs text-muted">When someone replies to your comment</span>
                   </span>
-                  <Toggle
-                    checked={notifyOnCommentReply}
-                    onChange={setNotifyOnCommentReply}
-                    label="Comment replies"
-                  />
+                  <Toggle checked={notifyOnCommentReply} onChange={setNotifyOnCommentReply} label="Comment replies" />
                 </label>
               </div>
-              <button
-                type="submit"
-                disabled={savingPrefs}
-                className="hard-btn mt-4 border-2 bg-accent px-4 py-2 text-sm text-surface disabled:opacity-50"
-              >
+              <button type="submit" disabled={savingPrefs} className="btn-hard btn-hard-primary mt-5 px-4 py-2.5 text-sm disabled:opacity-50">
                 {savingPrefs ? 'Saving…' : 'Save changes'}
               </button>
             </form>

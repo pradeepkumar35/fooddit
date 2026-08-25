@@ -1,16 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { createComment, getThread } from '../api/comments'
+import { getThread, createComment } from '../api/comments'
 import { useAuth } from '../hooks/useAuth'
-import { useToast } from '../context/ToastContext'
+import useIsDesktop from '../hooks/useIsDesktop'
+import { subscribe } from '../lib/live'
 import CommentForm from './CommentForm'
 import CommentNode from './CommentNode'
 import EmptyState from './EmptyState'
 import { CommentThreadSkeleton } from './Skeleton'
-import useIsDesktop from '../hooks/useIsDesktop'
-import { subscribe } from '../lib/live'
-
-const countNodes = (nodes) => nodes.reduce((total, node) => total + 1 + countNodes(node.replies), 0)
 
 const SORT_OPTIONS = [
   { value: 'best', label: 'Best' },
@@ -19,107 +16,111 @@ const SORT_OPTIONS = [
 ]
 
 /**
- * The threaded discussion under a review, styled like Reddit's comment section:
- * a count header, the compose box ("What are your thoughts?"), a per-level sort
- * control, then the nested tree. Replies post through {@code handleCreate} with
- * their parent comment id, refetch the whole thread so votes/scores stay
- * accurate, and briefly flag the newly created comment so it animates in.
+ * The discussion under a review. Owns: loading + Best/Top/New sorting of the
+ * reply tree, the single per-thread reply form (one open at a time across all
+ * nodes), live inserts — including the very first comment on a brand-new
+ * review via review.created — and collapse state handed down to each node.
  */
 export default function CommentThread({ reviewId }) {
   const { isAuthenticated } = useAuth()
-  const notify = useToast()
   const isDesktop = useIsDesktop()
   const [roots, setRoots] = useState(null)
-  const [sort, setSort] = useState('best')
   const [error, setError] = useState('')
-  const [newCommentId, setNewCommentId] = useState(null)
+  const [sort, setSort] = useState('best')
+  const [count, setCount] = useState(0)
   const [openReplyId, setOpenReplyId] = useState(null)
-
-  // Only one reply form is open across the whole thread at a time; the sentinel
-  // '__root__' represents the top-level compose form, a comment id a nested one.
-  // Toggling the currently open id closes it, so a reply form slides shut when
-  // a different one is opened.
-  const toggleReply = useCallback((id) => {
-    setOpenReplyId((current) => (current === id ? null : id))
-  }, [])
-  const closeReply = useCallback(() => setOpenReplyId(null), [])
-
-  const load = useCallback(async () => {
-    setError('')
-    try {
-      const thread = await getThread(reviewId, sort)
-      setRoots(thread)
-    } catch {
-      setError('Failed to load comments.')
-    }
-  }, [reviewId, sort])
+  const [newCommentId, setNewCommentId] = useState(null)
+  const flashTimerRef = useRef(null)
+  const sortRef = useRef(sort)
 
   useEffect(() => {
+    sortRef.current = sort
+  }, [sort])
+
+  const load = useCallback(() => {
+    getThread(reviewId, sortRef.current)
+      .then((thread) => {
+        // Tolerate both the envelope shape ({comments,totalCount}) and a bare
+        // array (older mocks/clients).
+        const list = Array.isArray(thread) ? thread : (thread?.comments ?? [])
+        setRoots(list)
+        setCount(Array.isArray(thread) ? countNodes(list) : (thread?.totalCount ?? countNodes(list)))
+      })
+      .catch(() => {
+        setRoots([])
+        setError('Failed to load the discussion. Please try again.')
+      })
+  }, [reviewId])
+
+  useEffect(() => {
+    setRoots(null)
+    setError('')
     load()
   }, [load])
 
-  // A new comment (possibly posted by another client) arrived on this review's
-  // live stream: refresh so it appears without a page reload.
+  // Live inserts from other clients (same stream that powers vote tallies).
+  // A brand-new review's first comment also arrives this way.
   useEffect(() => {
     return subscribe('comment.created', (event) => {
-      if (event.reviewId === reviewId) load()
+      if (event.reviewId !== reviewId) return
+      setCount((c) => c + 1)
+      setNewCommentId(event.comment?.id ?? null)
+      clearTimeout(flashTimerRef.current)
+      flashTimerRef.current = setTimeout(() => setNewCommentId(null), 2600)
+      if (roots !== null) load()
     })
-  }, [reviewId, load])
+  }, [reviewId, roots, load])
 
-  useEffect(() => {
-    if (!newCommentId) return
-    const timer = setTimeout(() => setNewCommentId(null), 2200)
-    return () => clearTimeout(timer)
-  }, [newCommentId])
+  useEffect(() => () => clearTimeout(flashTimerRef.current), [])
 
-  const handleCreate = useCallback(
-    async (parentCommentId, content) => {
-      const created = await createComment(reviewId, { content, parentCommentId })
-      setNewCommentId(created?.id ?? null)
-      notify(parentCommentId ? 'Reply posted' : 'Comment posted')
-      await load()
-    },
-    [reviewId, load, notify],
+  const handleCreate = async (parentCommentId, content) => {
+    await createComment(reviewId, { parentCommentId, content })
+    load()
+  }
+
+  const toggleReply = useCallback(
+    (id) => setOpenReplyId((current) => (current === id ? null : id)),
+    [],
   )
+  const closeReply = useCallback(() => setOpenReplyId(null), [])
 
-  const count = roots ? countNodes(roots) : 0
+  function countNodes(nodes) {
+    return nodes.reduce((total, node) => total + 1 + countNodes(node.replies), 0)
+  }
 
   if (roots === null) {
     if (error) {
       return (
-        <div className="mt-4 border-2 border-chili-500 bg-surface px-3 py-3 text-sm font-semibold text-chili-600 shadow-card">
-          {error}
-          <button type="button" onClick={load} className="ml-2 font-bold underline">
+        <div className="mt-4 border-[1.5px] border-down bg-card px-3 py-3 text-sm font-semibold text-down">
+          {error}{' '}
+          <button type="button" onClick={load} className="font-bold underline">
             Retry
           </button>
         </div>
       )
     }
     return (
-      <section className="mt-4 border-t-2 border-ink pt-3">
+      <div className="mt-4">
+        <p className="micro-label mb-3">Discussion</p>
         <CommentThreadSkeleton />
-      </section>
+      </div>
     )
   }
 
   return (
-    <section className="mt-4 border-t-2 border-ink pt-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="sticker px-3 py-1.5 text-sm font-bold uppercase tracking-wide text-ink">
-          {count} {count === 1 ? 'comment' : 'comments'}
-        </h3>
+    <section className="mt-5 border-t border-dashed border-hair pt-4" aria-label="Discussion">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="micro-label">Discussion · {count} {count === 1 ? 'reply' : 'replies'}</span>
         {count > 0 && (
-          <div className="ml-auto flex flex-wrap gap-1.5">
+          <div className="ml-auto flex gap-1.5">
             {SORT_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
                 aria-pressed={sort === opt.value}
                 onClick={() => setSort(opt.value)}
-                className={`border-2 border-ink px-2.5 py-1 text-xs font-bold uppercase tracking-wide transition duration-150 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none ${
-                  sort === opt.value
-                    ? 'bg-accent text-surface shadow-card'
-                    : 'bg-surface text-ink shadow-card hover:bg-accent-soft'
+                className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition duration-150 ${
+                  sort === opt.value ? 'bg-ink text-paper' : 'text-muted hover:text-ink'
                 }`}
               >
                 {opt.label}
@@ -139,31 +140,19 @@ export default function CommentThread({ reviewId }) {
             onCancel={closeReply}
           />
         ) : (
-          <div className="mt-2">
+          <div className="mb-3">
             <button
               type="button"
               onClick={() => toggleReply('__root__')}
-              className="hard-btn border-2 bg-surface px-3 py-2 text-sm font-bold uppercase tracking-wide text-ink hover:bg-accent hover:text-surface"
+              className="btn-hard px-3.5 py-2 text-xs uppercase tracking-wide"
             >
-              <svg
-                viewBox="0 0 24 24"
-                className="mr-1.5 inline h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
               Reply
             </button>
           </div>
         )
       ) : (
-        <p className="mt-2 text-xs font-semibold text-muted">
-          <Link to="/login" className="font-bold text-accent transition-colors duration-150 hover:underline">
+        <p className="mb-3 text-sm font-medium text-muted">
+          <Link to="/login" className="font-bold text-emerald hover:underline">
             Log in
           </Link>{' '}
           to join the discussion.
@@ -171,18 +160,14 @@ export default function CommentThread({ reviewId }) {
       )}
 
       {roots.length === 0 ? (
-        <div className="mt-2">
-          <EmptyState
-            compact
-            title="No comments yet"
-            description="Start the discussion — share your thoughts on this review."
-            icon={
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            }
-          />
-        </div>
+        <EmptyState
+          compact
+          title="No comments yet"
+          description="Start the discussion — share your thoughts on this review."
+          icon={<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />}
+        />
       ) : (
-        <ul className="mt-3 space-y-3">
+        <ul className="space-y-3">
           {roots.map((comment) => (
             <li key={comment.id}>
               <CommentNode
