@@ -32,9 +32,10 @@ export default function Navbar() {
   }, [searchParams])
 
   const setView = (next) => {
-    const nextParams = new URLSearchParams(searchParams)
-    next === 'map' ? nextParams.set('view', 'map') : nextParams.delete('view')
-    setSearchParams(nextParams, { replace: false })
+    // Navigate to the home route so the view tab works from any page (e.g.
+    // clicking "Map" while inside a restaurant dossier takes you home, not
+    // to /restaurants/:id?view=map which the detail page ignores).
+    navigate(next === 'map' ? '/?view=map' : '/')
     setMobileSearchOpen(false)
   }
 

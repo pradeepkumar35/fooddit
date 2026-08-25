@@ -66,9 +66,12 @@ export default function LedgerRow({ row, index = 0 }) {
     }
   }
 
+  const openDossier = () => navigate(`/restaurants/${row.id}`)
+
   return (
     <article
-      className="ledger-row group relative border-t border-hair transition-colors duration-150 first:border-t-0 hover:bg-card"
+      onClick={openDossier}
+      className="ledger-row group relative cursor-pointer border-t border-hair transition-colors duration-150 first:border-t-0 hover:bg-card"
       style={{ '--tier-edge': TIER_EDGE[row.tier] ?? 'transparent', animationDelay: `${Math.min(index, 11) * 40}ms` }}
       data-stagger="1"
     >
@@ -140,7 +143,7 @@ export default function LedgerRow({ row, index = 0 }) {
         <div className="flex flex-row items-center gap-2 sm:col-start-4 sm:flex-col sm:gap-2.5">
           <button
             type="button"
-            onClick={handleSave}
+            onClick={(e) => { e.stopPropagation(); handleSave(); }}
             disabled={busy}
             aria-label={saved ? 'Remove from saved' : 'Save restaurant'}
             aria-pressed={saved}
@@ -163,7 +166,7 @@ export default function LedgerRow({ row, index = 0 }) {
           </button>
           <button
             type="button"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
             aria-expanded={expanded}
             aria-label={expanded ? `Hide details for ${row.name}` : `Show details for ${row.name}`}
             className={`grid h-8 w-8 place-items-center border border-hair text-muted transition duration-150 hover:border-ink hover:text-ink ${
@@ -209,6 +212,7 @@ export default function LedgerRow({ row, index = 0 }) {
               )}
               <Link
                 to={`/restaurants/${row.id}`}
+                onClick={(e) => e.stopPropagation()}
                 className="btn-hard mt-3 px-3.5 py-1.5 text-xs uppercase tracking-wide"
               >
                 Open the dossier →

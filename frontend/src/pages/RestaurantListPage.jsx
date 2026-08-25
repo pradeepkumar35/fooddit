@@ -288,12 +288,29 @@ export default function RestaurantListPage() {
           <span className="num animate-score-in text-xs text-muted">{totalElements} entries</span>
         )}
       </div>
-      <p className="mb-5 max-w-[70ch] text-xs leading-relaxed text-muted">
-        <b className="font-semibold text-ink">#rank</b> is a restaurant's standing in the city — by rating,
-        ties broken by review count. It travels with each entry; the sort below only changes your browse order.
-        Seals: <TierSeal tier="ELITE" animate={false} /> elite · <TierSeal tier="GREAT" animate={false} /> great ·{' '}
-        <TierSeal tier="SOLID" animate={false} /> solid.
-      </p>
+      <div className="mb-5 text-xs leading-relaxed text-muted">
+        <p className="max-w-[70ch]">
+          <b className="font-semibold text-ink">#rank</b> is a restaurant's standing in the city — by
+          rating, ties broken by review count. It travels with each entry; the sort below only changes
+          your browse order.
+        </p>
+        {/* Legend: one unwrapping line so seals + words stay paired */}
+        <p className="mt-1.5 flex flex-nowrap items-center gap-x-4 gap-y-1 whitespace-nowrap">
+          <span className="shrink-0 font-semibold text-ink">Seals:</span>
+          <span className="inline-flex items-center gap-1.5">
+            <TierSeal tier="ELITE" animate={false} />
+            <b className="font-semibold text-ink">elite</b>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <TierSeal tier="GREAT" animate={false} />
+            <b className="font-semibold text-ink">great</b>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <TierSeal tier="SOLID" animate={false} />
+            <b className="font-semibold text-ink">solid</b>
+          </span>
+        </p>
+      </div>
 
       {/* Controls */}
       <div className="sticky top-16 z-10 -mx-4 mb-1 flex flex-wrap items-center gap-x-4 gap-y-2 border-y border-hair bg-paper px-4 py-3 sm:-mx-6 sm:px-6">
