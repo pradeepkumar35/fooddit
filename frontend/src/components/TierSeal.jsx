@@ -21,7 +21,7 @@ export default function TierSeal({ tier = 'SOLID', size = 'sm', animate = true }
     return (
       <div
         title={TIER_LABEL[tier]}
-        className={`seal-stamp relative mx-auto ${animate ? 'animate-stamp-in' : ''}`}
+        className={`seal-stamp seal-stamp-block relative mx-auto ${animate ? 'animate-stamp-in' : ''}`}
         style={{
           width: 64,
           height: 64,

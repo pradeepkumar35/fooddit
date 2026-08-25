@@ -196,14 +196,20 @@
     background: var(--color-hair);
   }
 
-  /* Tier seal: circular stamped ring, rotated like pressed by hand. */
+  /* Tier seal: circular stamped ring, rotated like pressed by hand.
+     inline-grid so seals flow inside sentences (legend, rank column). */
   .seal-stamp {
-    display: grid;
+    display: inline-grid;
     place-items: center;
+    vertical-align: middle;
     border-radius: 999px;
     background: var(--color-card);
     transform: rotate(-8deg);
     font-family: var(--font-mono);
+  }
+  /* Block variant for standalone placements (dossier fact-sheet seal). */
+  .seal-stamp-block {
+    display: grid;
   }
 
   /* Corner-notch connector tying an inset reply card to its parent. */
