@@ -75,10 +75,10 @@ export default function LedgerRow({ row, index = 0 }) {
       {/* Tier-color edge bar revealed on hover (mockup-exact). */}
       <span aria-hidden="true" className="edge-bar absolute bottom-3 left-0 top-3 w-[3px]" />
 
-      <div className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 px-2 py-4 sm:grid-cols-[56px_minmax(0,1fr)_auto_auto] sm:gap-x-4">
-        {/* Context column: standing rank + tier seal */}
-        <div className="flex flex-row items-center gap-2 pt-1 sm:flex-col sm:items-start sm:gap-1.5">
-          <span className="num text-[12.5px] text-muted">
+      <div className="grid grid-cols-[58px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 px-2 py-4 sm:grid-cols-[56px_minmax(0,1fr)_auto_auto] sm:gap-x-4">
+        {/* Context column: standing rank + tier seal, side by side */}
+        <div className="flex flex-row items-center gap-1.5 pt-1">
+          <span className="num whitespace-nowrap text-[12.5px] text-muted">
             #<b className="font-semibold text-ink"><AnimatedNumber value={row.rank} /></b>
           </span>
           <TierSeal tier={row.tier} />
