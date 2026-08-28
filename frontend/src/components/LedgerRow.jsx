@@ -73,29 +73,43 @@ export default function LedgerRow({ row, index = 0 }) {
   // (no tile in payload) -> generic. Never a broken-image icon.
   const [imgFailed, setImgFailed] = useState(false)
   const tile = row.fallbackUrl || '/images/cuisine/generic.svg'
-  const imgSrc = imgFailed || !row.imageUrl ? tile : resizeImageUrl(row.imageUrl, 300)
+  const useTile = imgFailed || !row.imageUrl
 
   return (
     <article
       onClick={openDossier}
-      className="ledger-row group relative min-h-[110px] cursor-pointer overflow-hidden border-t border-hair transition-colors duration-150 first:border-t-0 hover:bg-card sm:min-h-[126px]"
+      className="ledger-row group relative cursor-pointer overflow-hidden border-t border-hair transition-colors duration-150 first:border-t-0 hover:bg-card sm:min-h-[126px]"
       style={{ '--tier-edge': TIER_EDGE[row.tier] ?? 'transparent', animationDelay: `${Math.min(index, 11) * 40}ms` }}
       data-stagger="1"
     >
-      {/* Treatment B: flush-left image bleeding the full row height. */}
-      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[72px] border-r border-hair sm:w-[150px]">
-        <img
-          src={imgSrc}
-          alt=""
-          loading="lazy"
-          onError={() => setImgFailed(true)}
-          className="h-full w-full object-cover object-center"
-        />
-      </span>
-      {/* Tier-color edge bar (over the image's hairline) on hover, mockup-exact. */}
-      <span aria-hidden="true" className="edge-bar absolute bottom-3 left-[70px] top-3 w-[3px] sm:left-[148px]" />
+      {/* Mobile: full-width image stacked on top (landscape photos read whole).
+          Desktop: Treatment B — flush-left image bleeding the full row height. */}
+      <div className="relative h-44 w-full border-b border-hair sm:absolute sm:inset-y-0 sm:left-0 sm:h-auto sm:w-[150px] sm:border-b-0 sm:border-r">
+        {useTile ? (
+          <img src={tile} alt="" loading="lazy" className="h-full w-full object-cover object-center" />
+        ) : (
+          <>
+            <img
+              src={resizeImageUrl(row.imageUrl, 660)}
+              alt=""
+              loading="lazy"
+              onError={() => setImgFailed(true)}
+              className="block h-full w-full object-cover object-center sm:hidden"
+            />
+            <img
+              src={resizeImageUrl(row.imageUrl, 300)}
+              alt=""
+              loading="lazy"
+              onError={() => setImgFailed(true)}
+              className="hidden h-full w-full object-cover object-center sm:block"
+            />
+          </>
+        )}
+      </div>
+      {/* Tier-color edge bar (over the image's hairline) on hover, desktop only. */}
+      <span aria-hidden="true" className="edge-bar absolute bottom-3 left-[148px] top-3 hidden w-[3px] sm:block" />
 
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 py-4 pr-2 pl-[80px] sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:pl-[162px] sm:pr-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 py-4 pr-3 pl-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:pl-[162px]">
         {/* Co-headline: identity + discussion */}
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 pb-0.5">
