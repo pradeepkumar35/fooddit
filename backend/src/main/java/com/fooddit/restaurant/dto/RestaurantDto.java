@@ -1,5 +1,6 @@
 package com.fooddit.restaurant.dto;
 
+import com.fooddit.restaurant.CuisinePlaceholder;
 import com.fooddit.restaurant.entity.Restaurant;
 
 import java.math.BigDecimal;
@@ -30,7 +31,9 @@ public record RestaurantDto(
         Integer menuCategoryCount,
         long reviewCount,
         Instant createdAt,
-        boolean saved
+        boolean saved,
+        String imageUrl,
+        String fallbackUrl
 ) {
 
     public static RestaurantDto from(Restaurant restaurant, long reviewCount) {
@@ -57,7 +60,9 @@ public record RestaurantDto(
                 restaurant.getMenuCategoryCount(),
                 reviewCount,
                 restaurant.getCreatedAt(),
-                false);
+                false,
+                restaurant.getImageUrl(),
+                CuisinePlaceholder.tileFor(leadCuisine(restaurant)));
     }
 
     public static RestaurantDto from(Restaurant restaurant, long reviewCount, boolean saved) {
@@ -84,7 +89,9 @@ public record RestaurantDto(
                 restaurant.getMenuCategoryCount(),
                 reviewCount,
                 restaurant.getCreatedAt(),
-                saved);
+                saved,
+                restaurant.getImageUrl(),
+                CuisinePlaceholder.tileFor(leadCuisine(restaurant)));
     }
 
     private static String leadCuisine(Restaurant restaurant) {

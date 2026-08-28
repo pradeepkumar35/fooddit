@@ -45,6 +45,7 @@ export default function RestaurantDetailPage() {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [heroFailed, setHeroFailed] = useState(false)
 
   // Navigating between dossiers reuses this component (same route, new param),
   // so reset fetch state — otherwise restaurant A's data flashes while B loads,
@@ -55,6 +56,7 @@ export default function RestaurantDetailPage() {
     setStats(null)
     setError('')
     setNotFound(false)
+    setHeroFailed(false)
   }, [id])
 
   const loadData = useCallback(() => {
@@ -172,18 +174,44 @@ export default function RestaurantDetailPage() {
 
   return (
     <div className="mx-auto max-w-[1160px] px-4 pb-20 pt-7 sm:px-6">
-      {/* Title strip */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b-[1.5px] border-ink pb-4">
-        <h1 className="font-serif text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-          {restaurant.name}
-        </h1>
-        <div className="chips flex flex-wrap gap-1.5">
-          {[restaurant.cuisineType, restaurant.priceRange].filter(Boolean).map((chipLabel) => (
-            <span key={chipLabel} className="border border-hair px-2.5 py-1 text-[11px] font-medium text-muted">
-              {chipLabel}
-            </span>
-          ))}
+      {/* Hero A: full-bleed 16:7 band; name + meta over a gradient scrim.
+          Same fallback chain as the rows: photo -> (broken) cuisine tile. */}
+      <div className="relative overflow-hidden border-[1.5px] border-ink">
+        <img
+          src={heroFailed || !restaurant.imageUrl
+            ? restaurant.fallbackUrl || '/images/cuisine/generic.svg'
+            : restaurant.imageUrl}
+          alt={`${restaurant.name} — the place`}
+          onError={() => setHeroFailed(true)}
+          className="aspect-[16/7] w-full object-cover object-center"
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 px-5 pb-4 pt-14 text-white sm:px-7"
+          style={{ background: 'linear-gradient(to top, rgba(23,20,16,.88), rgba(23,20,16,.3) 60%, transparent)' }}
+        >
+          <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-2">
+            <h1 className="font-serif text-3xl font-bold tracking-tight drop-shadow-sm sm:text-[40px]">
+              {restaurant.name}
+            </h1>
+            <div className="flex flex-wrap items-center gap-1.5 pb-1">
+              {[restaurant.cuisineType, restaurant.priceRange, restaurant.locality]
+                .filter(Boolean)
+                .map((chipLabel) => (
+                  <span
+                    key={chipLabel}
+                    className="border border-white/40 bg-black/25 px-2.5 py-1 text-[11px] font-medium backdrop-blur-sm"
+                  >
+                    {chipLabel}
+                  </span>
+                ))}
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Sub-strip: address + actions */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <p className="text-sm font-medium text-muted">📍 {restaurant.address}</p>
         <div className="ml-auto flex items-center gap-2.5">
           <button
             type="button"
@@ -200,7 +228,6 @@ export default function RestaurantDetailPage() {
           </button>
         </div>
       </div>
-      <p className="mt-2 text-sm font-medium text-muted">📍 {restaurant.address}</p>
 
       <div className="mt-7 grid items-start gap-9 lg:grid-cols-[290px_minmax(0,1fr)]">
         {/* Fact-sheet rail */}

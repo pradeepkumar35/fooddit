@@ -30,7 +30,9 @@ public record LedgerRowDto(
         Instant lastActivityAt,
         LatestReview latestReview,
         long monthlyVotes,
-        boolean saved
+        boolean saved,
+        String imageUrl,
+        String fallbackUrl
 ) {
 
     /** Newest live review on this restaurant, for the expanded-row preview. */

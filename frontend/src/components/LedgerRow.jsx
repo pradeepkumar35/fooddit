@@ -68,27 +68,41 @@ export default function LedgerRow({ row, index = 0 }) {
 
   const openDossier = () => navigate(`/restaurants/${row.id}`)
 
+  // Runtime fallback chain: stored image -> (broken/missing) -> cuisine tile ->
+  // (no tile in payload) -> generic. Never a broken-image icon.
+  const [imgFailed, setImgFailed] = useState(false)
+  const tile = row.fallbackUrl || '/images/cuisine/generic.svg'
+  const imgSrc = imgFailed || !row.imageUrl ? tile : row.imageUrl
+
   return (
     <article
       onClick={openDossier}
-      className="ledger-row group relative cursor-pointer border-t border-hair transition-colors duration-150 first:border-t-0 hover:bg-card"
+      className="ledger-row group relative min-h-[110px] cursor-pointer overflow-hidden border-t border-hair transition-colors duration-150 first:border-t-0 hover:bg-card sm:min-h-[126px]"
       style={{ '--tier-edge': TIER_EDGE[row.tier] ?? 'transparent', animationDelay: `${Math.min(index, 11) * 40}ms` }}
       data-stagger="1"
     >
-      {/* Tier-color edge bar revealed on hover (mockup-exact). */}
-      <span aria-hidden="true" className="edge-bar absolute bottom-3 left-0 top-3 w-[3px]" />
+      {/* Treatment B: flush-left image bleeding the full row height. */}
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[72px] border-r border-hair sm:w-[150px]">
+        <img
+          src={imgSrc}
+          alt=""
+          loading="lazy"
+          onError={() => setImgFailed(true)}
+          className="h-full w-full object-cover object-center"
+        />
+      </span>
+      {/* Tier-color edge bar (over the image's hairline) on hover, mockup-exact. */}
+      <span aria-hidden="true" className="edge-bar absolute bottom-3 left-[70px] top-3 w-[3px] sm:left-[148px]" />
 
-      <div className="grid grid-cols-[58px_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 px-2 py-4 sm:grid-cols-[56px_minmax(0,1fr)_auto_auto] sm:gap-x-4">
-        {/* Context column: standing rank + tier seal, side by side */}
-        <div className="flex flex-row items-center gap-1.5 pt-1">
-          <span className="num whitespace-nowrap text-[12.5px] text-muted">
-            #<b className="font-semibold text-ink"><AnimatedNumber value={row.rank} /></b>
-          </span>
-          <TierSeal tier={row.tier} />
-        </div>
-
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 py-4 pr-2 pl-[80px] sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-4 sm:pl-[162px] sm:pr-3">
         {/* Co-headline: identity + discussion */}
         <div className="min-w-0">
+          <div className="flex items-center gap-1.5 pb-0.5">
+            <span className="num whitespace-nowrap text-[11.5px] text-muted">
+              #<b className="font-semibold text-ink"><AnimatedNumber value={row.rank} /></b>
+            </span>
+            <TierSeal tier={row.tier} />
+          </div>
           <Link
             to={`/restaurants/${row.id}`}
             className="font-serif text-lg font-semibold leading-snug text-ink transition-colors duration-150 hover:text-emerald sm:text-[19px]"
@@ -126,7 +140,7 @@ export default function LedgerRow({ row, index = 0 }) {
         </div>
 
         {/* Secondary data cluster */}
-        <div className="col-start-3 row-start-1 row-span-2 hidden text-right sm:block" style={{ minWidth: 96 }}>
+        <div className="hidden row-start-1 row-span-2 text-right sm:block" style={{ minWidth: 96 }}>
           <div className="num text-[22px] font-semibold leading-none text-ink">
             <AnimatedNumber value={row.avgRating ?? 0} decimals={1} />
           </div>
@@ -140,7 +154,7 @@ export default function LedgerRow({ row, index = 0 }) {
         </div>
 
         {/* Save + expand */}
-        <div className="flex flex-row items-center gap-2 sm:col-start-4 sm:flex-col sm:gap-2.5">
+        <div className="row-start-1 flex flex-row items-center gap-2 sm:flex-col sm:gap-2.5">
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); handleSave(); }}
@@ -192,7 +206,7 @@ export default function LedgerRow({ row, index = 0 }) {
         <div className="col-span-full grid transition-[grid-template-rows] duration-300 ease-out" style={{ gridTemplateRows: expanded ? '1fr' : '0fr' }}>
           <div className="min-h-0 overflow-hidden">
             {everExpanded && (
-              <div className="mb-3 mt-1 ml-0 border-l-2 border-hair pl-4 sm:ml-[60px]">
+              <div className="mb-3 mt-1 border-l-2 border-hair pl-4">
               {hasReviews ? (
                 <>
                   <p className="max-w-[68ch] font-serif text-sm leading-relaxed text-ink/85">

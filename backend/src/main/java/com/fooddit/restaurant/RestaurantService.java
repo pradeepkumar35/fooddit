@@ -157,7 +157,9 @@ public class RestaurantService {
                         lastActivity,
                         preview,
                         monthlyVotes.getOrDefault(r.getId(), 0L),
-                        savedIds.contains(r.getId())));
+                        savedIds.contains(r.getId()),
+                        r.getImageUrl(),
+                        com.fooddit.restaurant.CuisinePlaceholder.tileFor(leadCuisine(r))));
             }
         }
 

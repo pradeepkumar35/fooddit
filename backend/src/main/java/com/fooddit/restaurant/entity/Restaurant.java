@@ -92,6 +92,14 @@ public class Restaurant {
     @Column(name = "menu_item_count")
     private Integer menuItemCount;
 
+    /** Resolved imagery (external CDN link or self-hosted placeholder path). */
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    /** How imageUrl was resolved: DIRECT / BRANCH_FALLBACK / CUISINE_PLACEHOLDER / NONE. */
+    @Column(name = "image_source", nullable = false, length = 20)
+    private String imageSource = "NONE";
+
     @ElementCollection(fetch = FetchType.EAGER)
     @BatchSize(size = 500)
     @CollectionTable(name = "restaurant_cuisines", joinColumns = @JoinColumn(name = "restaurant_id"))

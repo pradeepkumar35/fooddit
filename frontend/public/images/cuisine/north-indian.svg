@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+  <rect width="800" height="500" fill="#F1E9D8"/>
+  <rect x="14" y="14" width="772" height="472" fill="none" stroke="#C9B98F" stroke-width="2"/>
+  <text x="400" y="285" font-size="150" text-anchor="middle">🍲</text>
+  <text x="400" y="420" font-family="IBM Plex Mono, monospace" font-size="30" letter-spacing="10"
+        text-anchor="middle" fill="#3B3320">NORTH INDIAN</text>
+<rect x="0" y="0" width="800" height="10" fill="#8E5A2B"/></svg>
