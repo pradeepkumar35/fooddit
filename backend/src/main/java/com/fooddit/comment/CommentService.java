@@ -12,6 +12,7 @@ import com.fooddit.notification.NotificationService;
 import com.fooddit.review.ReviewService;
 import com.fooddit.review.entity.Review;
 import com.fooddit.stream.CommentCreatedEvent;
+import com.fooddit.stream.CommentUpdatedEvent;
 import com.fooddit.stream.LiveEventPublisher;
 import com.fooddit.user.entity.User;
 import com.fooddit.user.repository.UserRepository;
@@ -92,7 +93,10 @@ public class CommentService {
         }
         comment.setContent(request.content().trim());
         comment.setEditedAt(Instant.now());
-        return CommentDto.from(comment);
+        CommentDto dto = CommentDto.from(comment);
+        liveEventPublisher.afterCommit(comment.getReview().getRestaurant().getId(), "comment.updated",
+                new CommentUpdatedEvent(comment.getReview().getId(), dto));
+        return dto;
     }
 
     /**
@@ -112,6 +116,8 @@ public class CommentService {
             comment.setDeleted(true);
             comment.setDeletedAt(Instant.now());
             commentRepository.save(comment);
+            liveEventPublisher.afterCommit(comment.getReview().getRestaurant().getId(), "comment.updated",
+                    new CommentUpdatedEvent(comment.getReview().getId(), CommentDto.from(comment)));
         }
         return CommentDto.from(comment);
     }

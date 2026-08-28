@@ -13,6 +13,7 @@ import com.fooddit.review.entity.Review;
 import com.fooddit.review.repository.ReviewRepository;
 import com.fooddit.stream.LiveEventPublisher;
 import com.fooddit.stream.ReviewCreatedEvent;
+import com.fooddit.stream.ReviewUpdatedEvent;
 import com.fooddit.user.entity.User;
 import com.fooddit.user.repository.UserRepository;
 import com.fooddit.vote.VoteService;
@@ -117,7 +118,10 @@ public class ReviewService {
         if (ratingChanged) {
             recalculateAverageRating(review.getRestaurant());
         }
-        return ReviewDto.from(review);
+        ReviewDto dto = ReviewDto.from(review);
+        liveEventPublisher.afterCommit(review.getRestaurant().getId(), "review.updated",
+                new ReviewUpdatedEvent(review.getRestaurant().getId(), dto));
+        return dto;
     }
 
     /**

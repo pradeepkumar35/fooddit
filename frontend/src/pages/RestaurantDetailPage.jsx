@@ -118,6 +118,16 @@ export default function RestaurantDetailPage() {
     })
   }, [id, loadData, notify])
 
+  // Live edits to any review on this restaurant: refresh the sheet (an edited
+  // rating moves the average + distribution) and the stream itself.
+  useEffect(() => {
+    return subscribe('review.updated', (event) => {
+      if (event.restaurantId !== id) return
+      loadData()
+      listReviews(id, sortRef.current).then(setRepsFrom).catch(() => {})
+    })
+  }, [id, loadData])
+
   const sortRef = useRef(sort)
   useEffect(() => {
     sortRef.current = sort

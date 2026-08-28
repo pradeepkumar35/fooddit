@@ -78,9 +78,33 @@ class LiveStreamApiIntegrationTest {
         return read(res).get("id").asText();
     }
 
-    private void createComment(Token token, String reviewId, String content) {
+    private String createComment(Token token, String reviewId, String content) {
         HttpHeaders headers = headers(token);
         ResponseEntity<String> res = rest.exchange("/api/reviews/" + reviewId + "/comments", HttpMethod.POST,
+                new HttpEntity<>("{\"content\":\"%s\"}".formatted(content), headers), String.class);
+        assertThat(res.getStatusCode().is2xxSuccessful()).isTrue();
+        return read(res).get("id").asText();
+    }
+
+    private void updateComment(Token token, String reviewId, String commentId, String content) {
+        HttpHeaders headers = headers(token);
+        ResponseEntity<String> res = rest.exchange(
+                "/api/reviews/" + reviewId + "/comments/" + commentId, HttpMethod.PATCH,
+                new HttpEntity<>("{\"content\":\"%s\"}".formatted(content), headers), String.class);
+        assertThat(res.getStatusCode().is2xxSuccessful()).isTrue();
+    }
+
+    private void deleteComment(Token token, String reviewId, String commentId) {
+        HttpHeaders headers = headers(token);
+        ResponseEntity<String> res = rest.exchange(
+                "/api/reviews/" + reviewId + "/comments/" + commentId, HttpMethod.DELETE,
+                new HttpEntity<>(headers), String.class);
+        assertThat(res.getStatusCode().is2xxSuccessful()).isTrue();
+    }
+
+    private void updateReview(Token token, String reviewId, String content) {
+        HttpHeaders headers = headers(token);
+        ResponseEntity<String> res = rest.exchange("/api/reviews/" + reviewId, HttpMethod.PATCH,
                 new HttpEntity<>("{\"content\":\"%s\"}".formatted(content), headers), String.class);
         assertThat(res.getStatusCode().is2xxSuccessful()).isTrue();
     }
@@ -201,6 +225,59 @@ class LiveStreamApiIntegrationTest {
         assertThat(frame).contains(reviewId);
         assertThat(frame).contains("\"rating\":5");
         assertThat(frame).contains("\"content\":\"brand new live review\"");
+
+        stream.close();
+    }
+
+    @Test
+    void subscriberReceivesCommentEditEvent() throws Exception {
+        Token token = signup(uniqueEmail());
+        String restaurantId = firstRestaurantId();
+        String reviewId = createReview(token, restaurantId, "Review for comment edits");
+        String commentId = createComment(token, reviewId, "original comment body");
+
+        BufferedReader stream = openStream(restaurantId);
+        updateComment(token, reviewId, commentId, "edited comment payload");
+
+        String frame = awaitData(stream, "edited comment payload");
+        assertThat(frame).contains("\"editedAt\":");
+        // The event names the comment + its thread so clients refresh in place.
+        assertThat(frame).contains(commentId);
+        assertThat(frame).contains(reviewId);
+
+        stream.close();
+    }
+
+    @Test
+    void subscriberReceivesCommentSoftDeleteEvent() throws Exception {
+        Token token = signup(uniqueEmail());
+        String restaurantId = firstRestaurantId();
+        String reviewId = createReview(token, restaurantId, "Review for comment deletes");
+        String commentId = createComment(token, reviewId, "to be deleted live");
+
+        BufferedReader stream = openStream(restaurantId);
+        deleteComment(token, reviewId, commentId);
+
+        String frame = awaitData(stream, "\"deleted\":true");
+        assertThat(frame).contains(commentId);
+
+        stream.close();
+    }
+
+    @Test
+    void subscriberReceivesReviewEditEvent() throws Exception {
+        Token token = signup(uniqueEmail());
+        String restaurantId = firstRestaurantId();
+        String reviewId = createReview(token, restaurantId, "review before edit");
+
+        BufferedReader stream = openStream(restaurantId);
+        updateReview(token, reviewId, "review after edit");
+
+        String frame = awaitData(stream, "review after edit");
+        assertThat(frame).contains(reviewId);
+        // Edit keeps the author's rating intact; the dto carries it through.
+        assertThat(frame).contains("\"rating\":5");
+        assertThat(frame).contains("\"editedAt\":");
 
         stream.close();
     }

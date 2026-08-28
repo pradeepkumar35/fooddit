@@ -71,6 +71,18 @@ export default function CommentThread({ reviewId }) {
     })
   }, [reviewId, roots, load])
 
+  // Live edits & soft-deletes from other clients: refresh the thread so the
+  // updated text / "(edited)" marker / "[deleted]" placeholder appear in place.
+  useEffect(() => {
+    return subscribe('comment.updated', (event) => {
+      if (event.reviewId !== reviewId) return
+      setNewCommentId(event.comment?.id ?? null)
+      clearTimeout(flashTimerRef.current)
+      flashTimerRef.current = setTimeout(() => setNewCommentId(null), 2600)
+      load()
+    })
+  }, [reviewId, load])
+
   useEffect(() => () => clearTimeout(flashTimerRef.current), [])
 
   const handleCreate = async (parentCommentId, content) => {
