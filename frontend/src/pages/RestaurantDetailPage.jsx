@@ -17,6 +17,7 @@ import { FactSheetSkeleton, ReviewCardSkeleton } from '../components/Skeleton'
 import { useAuth } from '../hooks/useAuth'
 import useLiveStream from '../hooks/useLiveStream'
 import { subscribe } from '../lib/live'
+import { resizeImageUrl } from '../utils/imageUrl'
 
 const REVIEW_SORTS = [
   { value: 'best', label: 'Best' },
@@ -180,7 +181,7 @@ export default function RestaurantDetailPage() {
         <img
           src={heroFailed || !restaurant.imageUrl
             ? restaurant.fallbackUrl || '/images/cuisine/generic.svg'
-            : restaurant.imageUrl}
+            : resizeImageUrl(restaurant.imageUrl, 1200)}
           alt={`${restaurant.name} — the place`}
           onError={() => setHeroFailed(true)}
           className="aspect-[16/7] w-full object-cover object-center"

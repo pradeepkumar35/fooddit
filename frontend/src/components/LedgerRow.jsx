@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext'
 import AnimatedNumber from './AnimatedNumber'
 import MicroHistogram from './MicroHistogram'
 import TierSeal from './TierSeal'
+import { resizeImageUrl } from '../utils/imageUrl'
 
 const TIER_EDGE = {
   ELITE: 'var(--color-gold)',
@@ -72,7 +73,7 @@ export default function LedgerRow({ row, index = 0 }) {
   // (no tile in payload) -> generic. Never a broken-image icon.
   const [imgFailed, setImgFailed] = useState(false)
   const tile = row.fallbackUrl || '/images/cuisine/generic.svg'
-  const imgSrc = imgFailed || !row.imageUrl ? tile : row.imageUrl
+  const imgSrc = imgFailed || !row.imageUrl ? tile : resizeImageUrl(row.imageUrl, 300)
 
   return (
     <article
@@ -139,8 +140,8 @@ export default function LedgerRow({ row, index = 0 }) {
           </div>
         </div>
 
-        {/* Secondary data cluster */}
-        <div className="hidden row-start-1 row-span-2 text-right sm:block" style={{ minWidth: 96 }}>
+        {/* Secondary data cluster (auto-placed after body: DOM order defines columns) */}
+        <div className="hidden text-right sm:block" style={{ minWidth: 96 }}>
           <div className="num text-[22px] font-semibold leading-none text-ink">
             <AnimatedNumber value={row.avgRating ?? 0} decimals={1} />
           </div>
@@ -154,7 +155,7 @@ export default function LedgerRow({ row, index = 0 }) {
         </div>
 
         {/* Save + expand */}
-        <div className="row-start-1 flex flex-row items-center gap-2 sm:flex-col sm:gap-2.5">
+        <div className="flex flex-row items-center gap-2 sm:flex-col sm:gap-2.5">
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); handleSave(); }}
