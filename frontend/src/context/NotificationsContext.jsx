@@ -9,12 +9,18 @@ import { useAuth } from '../hooks/useAuth'
 /**
  * Shared notification state + background polling.
  *
- * Polling lives here (not in the dropdown) so the unread badge stays fresh as
- * long as an authenticated user is on the site — regardless of whether the bell
- * dropdown has ever been mounted or opened. The dropdown just consumes this
- * state and lets the provider own the reads. Polling is disabled entirely for
- * anonymous users.
+ * Polling lives here (not in the dropdown) so the unread badge stays fresh for
+ * a signed-in user, and it is deliberately gentle: a slow cadence that pauses
+ * entirely while the tab is hidden and refetches the moment it becomes visible
+ * again. Every poll is a real database read, and this app runs on a serverless
+ * Postgres whose free tier meters *compute time* — each query wakes the compute
+ * for its idle window, so a background tab polling every 30s kept the database
+ * awake around the clock and drained the monthly compute allowance (the account
+ * was suspended on it). The bell dropdown also loads on open, so opening it is
+ * always instant. Polling is disabled entirely for anonymous users.
  */
+const POLL_INTERVAL_MS = 10 * 60 * 1000
+
 const NotificationsContext = createContext(null)
 
 export function NotificationsProvider({ children }) {
@@ -41,13 +47,26 @@ export function NotificationsProvider({ children }) {
     }
   }, [isAuthenticated])
 
-  // Load immediately when auth state changes, then poll on a 30s cadence while
-  // signed in so the badge reflects new replies without a page refresh.
+  // Load immediately when auth state changes, then poll slowly while signed in.
+  // Hidden tabs stay silent (their polls only cost metered compute time for
+  // nobody's benefit); returning to the tab refreshes immediately.
   useEffect(() => {
     load()
     if (!isAuthenticated) return undefined
-    const id = setInterval(load, 30000)
-    return () => clearInterval(id)
+
+    const poll = () => {
+      if (document.hidden) return
+      load()
+    }
+    const id = setInterval(poll, POLL_INTERVAL_MS)
+    const onVisibilityChange = () => {
+      if (!document.hidden) load()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
   }, [load, isAuthenticated])
 
   const markRead = useCallback((id) => {

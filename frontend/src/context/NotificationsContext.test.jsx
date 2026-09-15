@@ -41,9 +41,10 @@ describe('NotificationsProvider', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    delete document.hidden
   })
 
-  it('loads the unread count immediately for a signed-in user and polls on a 30s cadence', async () => {
+  it('loads the unread count immediately for a signed-in user and polls on a slow cadence', async () => {
     listNotifications.mockResolvedValue(data)
     useAuth.mockReturnValue({ isAuthenticated: true })
 
@@ -58,10 +59,37 @@ describe('NotificationsProvider', () => {
     expect(screen.getByTestId('items').textContent).toBe('1')
 
     listNotifications.mockResolvedValue({ ...data, unreadCount: 4 })
-    await act(async () => vi.advanceTimersByTime(30000))
+    await act(async () => vi.advanceTimersByTime(10 * 60 * 1000))
     await flush()
 
     expect(screen.getByTestId('unread').textContent).toBe('4')
+    expect(listNotifications).toHaveBeenCalledTimes(2)
+  })
+
+  it('stays silent in a hidden tab and refreshes the moment it becomes visible', async () => {
+    listNotifications.mockResolvedValue(data)
+    useAuth.mockReturnValue({ isAuthenticated: true })
+
+    render(
+      <NotificationsProvider>
+        <Probe />
+      </NotificationsProvider>,
+    )
+    await flush()
+    expect(listNotifications).toHaveBeenCalledTimes(1)
+
+    // Hidden tab: poll ticks pass without any database read (metered compute).
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true })
+    await act(async () => vi.advanceTimersByTime(10 * 60 * 1000))
+    await flush()
+    expect(listNotifications).toHaveBeenCalledTimes(1)
+
+    // Returning to the tab refreshes immediately so the badge is never stale.
+    Object.defineProperty(document, 'hidden', { value: false, configurable: true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    await flush()
     expect(listNotifications).toHaveBeenCalledTimes(2)
   })
 
