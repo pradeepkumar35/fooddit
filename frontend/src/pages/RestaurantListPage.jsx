@@ -239,7 +239,7 @@ export default function RestaurantListPage() {
           {/* The only scrollable pane: tapping a row flies the map to that pin
               and opens its popup; the dossier stays one tap away on the right. */}
           <div
-            className="order-3 grid min-h-0 content-start gap-px overflow-y-auto border border-hair bg-hair lg:col-start-1 lg:row-start-2"
+            className="order-3 grid min-h-0 content-start gap-px overflow-x-hidden overflow-y-auto border border-hair bg-hair lg:col-start-1 lg:row-start-2"
             data-testid="atlas-list"
           >
             {filteredMapRows.length === 0 ? (
@@ -260,11 +260,14 @@ export default function RestaurantListPage() {
                     type="button"
                     onClick={() => focusOnMap(r)}
                     aria-label={`Show ${r.name} on the map`}
-                    className="flex min-w-0 flex-1 items-baseline gap-3 text-left"
+                    title={r.name}
+                    className="flex min-w-0 flex-1 flex-col gap-0.5 text-left"
                   >
-                    <span className="font-serif text-base font-semibold text-ink">{r.name}</span>
+                    <span className="flex min-w-0 items-baseline gap-2">
+                      <span className="truncate font-serif text-base font-semibold text-ink">{r.name}</span>
+                      <span className="num ml-auto shrink-0 text-sm font-semibold text-ink">{Number(r.avgRating ?? 0).toFixed(1)}</span>
+                    </span>
                     <span className="truncate text-xs text-muted">{[r.cuisineType, r.locality].filter(Boolean).join(' · ')}</span>
-                    <span className="num ml-auto text-sm font-semibold text-ink">{Number(r.avgRating ?? 0).toFixed(1)}</span>
                   </button>
                   <Link
                     to={`/restaurants/${r.id}`}
