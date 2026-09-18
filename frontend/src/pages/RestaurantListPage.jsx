@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { fetchLedger, listCuisines, listRestaurants } from '../api/restaurants'
 import EmptyState from '../components/EmptyState'
@@ -61,6 +61,8 @@ export default function RestaurantListPage() {
   const [hoveredId, setHoveredId] = useState(null)
   // Restaurant the index focused on the map ({ id, n }; n retriggers a repeat tap).
   const [mapSelected, setMapSelected] = useState(null)
+  // Text search over the fetched slice — filters the list AND the pins together.
+  const [listQuery, setListQuery] = useState('')
 
   const [cuisineOptions, setCuisineOptions] = useState([])
 
@@ -159,6 +161,23 @@ export default function RestaurantListPage() {
     setSearchParams(next)
   }
 
+  // A new city slice invalidates the text search.
+  useEffect(() => {
+    setListQuery('')
+  }, [city])
+
+  const filteredMapRows = useMemo(() => {
+    const q = listQuery.trim().toLowerCase()
+    if (!q) return mapRows
+    return mapRows.filter((r) =>
+      [r.name, r.locality, r.cuisineType, ...(r.cuisines ?? [])]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(q),
+    )
+  }, [mapRows, listQuery])
+
   // Index tap -> the Atlas flies to that pin and opens its popup. The map may
   // be scrolled out of view, so bring it back before the flight lands.
   const focusOnMap = (row) => {
@@ -178,55 +197,101 @@ export default function RestaurantListPage() {
           </h1>
         </div>
 
-        <div className="panel relative -rotate-[0.4deg] overflow-hidden p-0" style={{ minHeight: 320 }}>
-          <Suspense
-            fallback={
-              <div className="grid place-items-center px-6 py-16 text-center" role="status" aria-label="Loading the map">
-                <p className="text-sm font-semibold text-muted">Unfolding the atlas…</p>
-              </div>
-            }
+        {/* Side by side on desktop: searchable list left, sticky map right.
+            Stacked on mobile with the map on top. */}
+        <div className="mt-4 grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)]" data-testid="atlas-layout">
+          <section
+            aria-label="Restaurants in this view"
+            className="lg:col-start-1 lg:row-start-1"
           >
-            <MapView rows={mapRows} loading={mapLoading} selected={mapSelected} />
-          </Suspense>
-          <div className="flex items-center gap-2 border-t border-hair bg-card px-3 py-2">
-            <span className="micro-label">{mapLoading ? 'Plotting…' : `${mapRows.length} plotted`}</span>
-            <Link to="/" className="micro-label ml-auto normal-case tracking-normal hover:text-ink">
-              ← back to the ledger
-            </Link>
-          </div>
-        </div>
-
-        {/* Docked index under the atlas: a tap flies the map to that pin and
-            opens its popup; the dossier stays one tap away on the right. */}
-        <div className="mt-6 grid gap-px border border-hair bg-hair">
-          {mapRows.map((r) => (
-            <div
-              key={r.id}
-              onMouseEnter={() => setHoveredId(r.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              className={`flex items-center gap-3 bg-paper px-4 py-3 transition-colors duration-150 hover:bg-card ${
-                hoveredId === r.id || mapSelected?.id === r.id ? 'bg-card' : ''
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => focusOnMap(r)}
-                aria-label={`Show ${r.name} on the map`}
-                className="flex min-w-0 flex-1 items-baseline gap-3 text-left"
-              >
-                <span className="font-serif text-base font-semibold text-ink">{r.name}</span>
-                <span className="truncate text-xs text-muted">{[r.cuisineType, r.locality].filter(Boolean).join(' · ')}</span>
-                <span className="num ml-auto text-sm font-semibold text-ink">{Number(r.avgRating ?? 0).toFixed(1)}</span>
-              </button>
-              <Link
-                to={`/restaurants/${r.id}`}
-                aria-label={`Open the dossier for ${r.name}`}
-                className="micro-label shrink-0 normal-case tracking-normal hover:text-ink"
-              >
-                dossier →
-              </Link>
+            <div className="panel mb-2 flex items-center gap-2 p-2">
+              <label htmlFor="atlas-search" className="micro-label shrink-0 pl-1">
+                Search
+              </label>
+              <input
+                id="atlas-search"
+                type="search"
+                value={listQuery}
+                onChange={(e) => setListQuery(e.target.value)}
+                placeholder="Name, locality, cuisine…"
+                aria-label="Search restaurants in this view"
+                className="min-w-0 flex-1 border border-hair bg-paper px-2.5 py-2 text-sm text-ink placeholder:text-muted focus:border-ink focus:outline-none"
+              />
+              {listQuery && (
+                <button
+                  type="button"
+                  onClick={() => setListQuery('')}
+                  aria-label="Clear search"
+                  className="shrink-0 border border-hair bg-card px-2.5 py-1.5 text-sm font-bold text-ink hover:border-ink"
+                >
+                  ×
+                </button>
+              )}
             </div>
-          ))}
+            <p className="micro-label mb-2" role="status">
+              {listQuery.trim()
+                ? `${filteredMapRows.length} of ${mapRows.length} shown`
+                : `${mapRows.length} on the list`}
+            </p>
+            {/* Tapping a row flies the map to that pin and opens its popup;
+                the dossier stays one tap away on the right. */}
+            <div className="grid gap-px border border-hair bg-hair">
+              {filteredMapRows.length === 0 ? (
+                <p className="bg-paper px-4 py-6 text-center text-sm font-semibold text-muted">
+                  {mapLoading ? 'Plotting…' : `Nothing matches “${listQuery.trim()}” here.`}
+                </p>
+              ) : (
+                filteredMapRows.map((r) => (
+                  <div
+                    key={r.id}
+                    onMouseEnter={() => setHoveredId(r.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                    className={`flex items-center gap-3 bg-paper px-4 py-3 transition-colors duration-150 hover:bg-card ${
+                      hoveredId === r.id || mapSelected?.id === r.id ? 'bg-card' : ''
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => focusOnMap(r)}
+                      aria-label={`Show ${r.name} on the map`}
+                      className="flex min-w-0 flex-1 items-baseline gap-3 text-left"
+                    >
+                      <span className="font-serif text-base font-semibold text-ink">{r.name}</span>
+                      <span className="truncate text-xs text-muted">{[r.cuisineType, r.locality].filter(Boolean).join(' · ')}</span>
+                      <span className="num ml-auto text-sm font-semibold text-ink">{Number(r.avgRating ?? 0).toFixed(1)}</span>
+                    </button>
+                    <Link
+                      to={`/restaurants/${r.id}`}
+                      aria-label={`Open the dossier for ${r.name}`}
+                      className="micro-label shrink-0 normal-case tracking-normal hover:text-ink"
+                    >
+                      dossier →
+                    </Link>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <div className="lg:col-start-2 lg:row-start-1">
+            <div className="panel relative -rotate-[0.4deg] overflow-hidden p-0 lg:sticky lg:top-24" style={{ minHeight: 320 }}>
+              <Suspense
+                fallback={
+                  <div className="grid place-items-center px-6 py-16 text-center" role="status" aria-label="Loading the map">
+                    <p className="text-sm font-semibold text-muted">Unfolding the atlas…</p>
+                  </div>
+                }
+              >
+                <MapView rows={filteredMapRows} loading={mapLoading} selected={mapSelected} />
+              </Suspense>
+              <div className="flex items-center gap-2 border-t border-hair bg-card px-3 py-2">
+                <span className="micro-label">{mapLoading ? 'Plotting…' : `${filteredMapRows.length} plotted`}</span>
+                <Link to="/" className="micro-label ml-auto normal-case tracking-normal hover:text-ink">
+                  ← back to the ledger
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )

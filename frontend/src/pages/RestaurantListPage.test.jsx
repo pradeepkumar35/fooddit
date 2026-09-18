@@ -216,4 +216,32 @@ describe('RestaurantListPage — the City Ledger', () => {
       screen.getByRole('link', { name: 'Open the dossier for Dosa Dynasty' }),
     ).toHaveAttribute('href', '/restaurants/r1')
   })
+
+  it('searches the list and the pins together', async () => {
+    renderAt('/?view=map')
+    await screen.findByTestId('atlas-map')
+
+    await userEvent.type(
+      screen.getByRole('searchbox', { name: 'Search restaurants in this view' }),
+      'biryani',
+    )
+
+    // List narrows to the match (row buttons; popup stubs also carry names).
+    expect(
+      screen.queryByRole('button', { name: 'Show Dosa Dynasty on the map' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Show The Biryani Diaries on the map' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('1 of 2 shown')).toBeInTheDocument()
+    // …and so do the pins and the plotted count.
+    expect(screen.getAllByTestId('map-marker')).toHaveLength(1)
+    expect(screen.getByText('1 plotted')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear search' }))
+    expect(
+      screen.getByRole('button', { name: 'Show Dosa Dynasty on the map' }),
+    ).toBeInTheDocument()
+    expect(screen.getAllByTestId('map-marker')).toHaveLength(2)
+  })
 })
