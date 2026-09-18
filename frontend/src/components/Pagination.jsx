@@ -1,9 +1,20 @@
+import { useEffect, useState } from 'react'
+
 /**
  * Page-based pagination in ledger folio style: mono numerals, hard-shadow
- * hover, ellipsis windows for long ranges. Never "show more" — the backend
- * owns slicing, this control just walks pages.
+ * hover, ellipsis windows for long ranges, and a "jump to page" box so a
+ * 500-page ledger doesn't have to be walked one step at a time. Never "show
+ * more" — the backend owns slicing, this control just walks pages.
  */
 export default function Pagination({ page, totalPages, onPageChange }) {
+  const [draft, setDraft] = useState('')
+
+  // The box is an entry field, not a display: clear it whenever the page (or
+  // the result set) changes so its placeholder always shows where you are.
+  useEffect(() => {
+    setDraft('')
+  }, [page, totalPages])
+
   if (!totalPages || totalPages <= 1) return null
 
   const numbers = []
@@ -17,6 +28,15 @@ export default function Pagination({ page, totalPages, onPageChange }) {
     for (let i = start; i <= end; i++) numbers.push(i)
     if (end < totalPages - 1) numbers.push('…')
     numbers.push(totalPages)
+  }
+
+  const jumpTo = (event) => {
+    event.preventDefault()
+    const parsed = parseInt(draft, 10)
+    setDraft('')
+    if (!Number.isFinite(parsed)) return
+    const target = Math.min(Math.max(parsed, 1), totalPages) - 1
+    if (target !== page) onPageChange(target)
   }
 
   const base =
@@ -62,6 +82,24 @@ export default function Pagination({ page, totalPages, onPageChange }) {
       >
         Next ›
       </button>
+
+      {/* Jump box: type a folio number and press Enter (or Go) to land on it. */}
+      <form onSubmit={jumpTo} className="ml-1 flex items-center gap-1.5">
+        <span className="micro-label" aria-hidden="true">Go to</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value.replace(/\D/g, '').slice(0, 6))}
+          placeholder={String(page + 1)}
+          aria-label="Go to page"
+          className="num h-10 w-16 border-[1.5px] border-ink bg-card px-2 text-center text-[13px] font-medium text-ink placeholder:text-muted"
+        />
+        <button type="submit" disabled={!draft} className={`${base} px-3 disabled:opacity-40`}>
+          Go
+        </button>
+      </form>
     </nav>
   )
 }
