@@ -117,10 +117,7 @@ export default function MapView({ rows, loading, selected = null }) {
   const selectedId = selected?.id != null ? String(selected.id) : null
 
   return (
-    <div
-      className="relative aspect-[16/9] min-h-[320px] lg:aspect-auto lg:h-[calc(100vh-16rem)] lg:min-h-[480px]"
-      data-testid="atlas-map"
-    >
+    <div className="relative h-full min-h-[200px] w-full" data-testid="atlas-map">
       <MapContainer
         center={center}
         zoom={12}

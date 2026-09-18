@@ -244,4 +244,22 @@ describe('RestaurantListPage — the City Ledger', () => {
     ).toBeInTheDocument()
     expect(screen.getAllByTestId('map-marker')).toHaveLength(2)
   })
+
+  it('keeps search and map static while only the list pane scrolls', async () => {
+    renderAt('/?view=map')
+    await screen.findByTestId('atlas-map')
+
+    const layout = screen.getByTestId('atlas-layout')
+    const list = screen.getByTestId('atlas-list')
+    const search = screen.getByRole('searchbox', { name: 'Search restaurants in this view' })
+    const map = screen.getByTestId('atlas-map')
+
+    // Only the list pane scrolls…
+    expect(list).toHaveClass('overflow-y-auto')
+    // …the search bar and the map live outside of it, so they stay put.
+    expect(list.contains(search)).toBe(false)
+    expect(list.contains(map)).toBe(false)
+    expect(layout.contains(search)).toBe(true)
+    expect(layout.contains(map)).toBe(true)
+  })
 })

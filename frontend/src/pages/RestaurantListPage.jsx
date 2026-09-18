@@ -189,7 +189,7 @@ export default function RestaurantListPage() {
   /* ============================== MAP VIEW ============================== */
   if (view === 'map') {
     return (
-      <div className="mx-auto max-w-[1160px] px-4 pb-16 pt-6 sm:px-6">
+      <div className="mx-auto max-w-[1160px] px-4 pb-4 pt-6 sm:px-6">
         <div className="kicker-line">
           <h1 className="font-serif text-2xl font-bold text-ink">
             Atlas · {selectedCity ? selectedCity.cityName : '…'}
@@ -197,14 +197,15 @@ export default function RestaurantListPage() {
           </h1>
         </div>
 
-        {/* Side by side on desktop: searchable list left, sticky map right.
-            Stacked on mobile with the map on top. */}
-        <div className="mt-4 grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)]" data-testid="atlas-layout">
-          <section
-            aria-label="Restaurants in this view"
-            className="lg:col-start-1 lg:row-start-1"
-          >
-            <div className="panel mb-2 flex items-center gap-2 p-2">
+        {/* Viewport-locked: the search bar and the map never scroll — only the
+            list pane does. Mobile stacks search / map / list; desktop puts the
+            search + list in the left column and the map across the right. */}
+        <div
+          className="mt-4 grid h-[calc(100dvh-190px)] min-h-[460px] grid-rows-[auto_30dvh_minmax(0,1fr)] gap-3 lg:grid-cols-[380px_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)] lg:gap-5"
+          data-testid="atlas-layout"
+        >
+          <div className="order-1 min-w-0 lg:col-start-1 lg:row-start-1">
+            <div className="panel flex items-center gap-2 p-2">
               <label htmlFor="atlas-search" className="micro-label shrink-0 pl-1">
                 Search
               </label>
@@ -228,63 +229,69 @@ export default function RestaurantListPage() {
                 </button>
               )}
             </div>
-            <p className="micro-label mb-2" role="status">
+            <p className="micro-label mt-2" role="status">
               {listQuery.trim()
                 ? `${filteredMapRows.length} of ${mapRows.length} shown`
                 : `${mapRows.length} on the list`}
             </p>
-            {/* Tapping a row flies the map to that pin and opens its popup;
-                the dossier stays one tap away on the right. */}
-            <div className="grid gap-px border border-hair bg-hair">
-              {filteredMapRows.length === 0 ? (
-                <p className="bg-paper px-4 py-6 text-center text-sm font-semibold text-muted">
-                  {mapLoading ? 'Plotting…' : `Nothing matches “${listQuery.trim()}” here.`}
-                </p>
-              ) : (
-                filteredMapRows.map((r) => (
-                  <div
-                    key={r.id}
-                    onMouseEnter={() => setHoveredId(r.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                    className={`flex items-center gap-3 bg-paper px-4 py-3 transition-colors duration-150 hover:bg-card ${
-                      hoveredId === r.id || mapSelected?.id === r.id ? 'bg-card' : ''
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => focusOnMap(r)}
-                      aria-label={`Show ${r.name} on the map`}
-                      className="flex min-w-0 flex-1 items-baseline gap-3 text-left"
-                    >
-                      <span className="font-serif text-base font-semibold text-ink">{r.name}</span>
-                      <span className="truncate text-xs text-muted">{[r.cuisineType, r.locality].filter(Boolean).join(' · ')}</span>
-                      <span className="num ml-auto text-sm font-semibold text-ink">{Number(r.avgRating ?? 0).toFixed(1)}</span>
-                    </button>
-                    <Link
-                      to={`/restaurants/${r.id}`}
-                      aria-label={`Open the dossier for ${r.name}`}
-                      className="micro-label shrink-0 normal-case tracking-normal hover:text-ink"
-                    >
-                      dossier →
-                    </Link>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
+          </div>
 
-          <div className="lg:col-start-2 lg:row-start-1">
-            <div className="panel relative -rotate-[0.4deg] overflow-hidden p-0 lg:sticky lg:top-24" style={{ minHeight: 320 }}>
-              <Suspense
-                fallback={
-                  <div className="grid place-items-center px-6 py-16 text-center" role="status" aria-label="Loading the map">
-                    <p className="text-sm font-semibold text-muted">Unfolding the atlas…</p>
-                  </div>
-                }
-              >
-                <MapView rows={filteredMapRows} loading={mapLoading} selected={mapSelected} />
-              </Suspense>
-              <div className="flex items-center gap-2 border-t border-hair bg-card px-3 py-2">
+          {/* The only scrollable pane: tapping a row flies the map to that pin
+              and opens its popup; the dossier stays one tap away on the right. */}
+          <div
+            className="order-3 grid min-h-0 content-start gap-px overflow-y-auto border border-hair bg-hair lg:col-start-1 lg:row-start-2"
+            data-testid="atlas-list"
+          >
+            {filteredMapRows.length === 0 ? (
+              <p className="bg-paper px-4 py-6 text-center text-sm font-semibold text-muted">
+                {mapLoading ? 'Plotting…' : `Nothing matches “${listQuery.trim()}” here.`}
+              </p>
+            ) : (
+              filteredMapRows.map((r) => (
+                <div
+                  key={r.id}
+                  onMouseEnter={() => setHoveredId(r.id)}
+                  onMouseLeave={() => setHoveredId(null)}
+                  className={`flex items-center gap-3 bg-paper px-4 py-3 transition-colors duration-150 hover:bg-card ${
+                    hoveredId === r.id || mapSelected?.id === r.id ? 'bg-card' : ''
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => focusOnMap(r)}
+                    aria-label={`Show ${r.name} on the map`}
+                    className="flex min-w-0 flex-1 items-baseline gap-3 text-left"
+                  >
+                    <span className="font-serif text-base font-semibold text-ink">{r.name}</span>
+                    <span className="truncate text-xs text-muted">{[r.cuisineType, r.locality].filter(Boolean).join(' · ')}</span>
+                    <span className="num ml-auto text-sm font-semibold text-ink">{Number(r.avgRating ?? 0).toFixed(1)}</span>
+                  </button>
+                  <Link
+                    to={`/restaurants/${r.id}`}
+                    aria-label={`Open the dossier for ${r.name}`}
+                    className="micro-label shrink-0 normal-case tracking-normal hover:text-ink"
+                  >
+                    dossier →
+                  </Link>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="order-2 min-h-0 min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+            <div className="panel relative flex h-full min-h-0 -rotate-[0.4deg] flex-col overflow-hidden p-0">
+              <div className="min-h-0 flex-1">
+                <Suspense
+                  fallback={
+                    <div className="grid h-full place-items-center px-6 text-center" role="status" aria-label="Loading the map">
+                      <p className="text-sm font-semibold text-muted">Unfolding the atlas…</p>
+                    </div>
+                  }
+                >
+                  <MapView rows={filteredMapRows} loading={mapLoading} selected={mapSelected} />
+                </Suspense>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 border-t border-hair bg-card px-3 py-2">
                 <span className="micro-label">{mapLoading ? 'Plotting…' : `${filteredMapRows.length} plotted`}</span>
                 <Link to="/" className="micro-label ml-auto normal-case tracking-normal hover:text-ink">
                   ← back to the ledger
