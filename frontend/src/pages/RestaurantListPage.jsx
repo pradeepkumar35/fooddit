@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { fetchLedger, listCuisines, listRestaurants } from '../api/restaurants'
 import EmptyState from '../components/EmptyState'
 import LedgerRow from '../components/LedgerRow'
 import LedgerSelect from '../components/LedgerSelect'
 import Pagination from '../components/Pagination'
-import RestaurantMap from '../components/RestaurantMap'
 import TierSeal from '../components/TierSeal'
 import { LedgerRowSkeleton } from '../components/Skeleton'
 import { useLocation } from '../hooks/useLocation'
+
+/* The Atlas is code-split: ledger visitors never download Leaflet. */
+const MapView = lazy(() => import('../components/MapView'))
 
 const SORT_OPTIONS = [
   { value: 'mostdiscussed', label: 'Most discussed' },
@@ -22,30 +24,12 @@ const RATING_OPTIONS = [
   { value: '3', label: '3 star & up' },
 ]
 
-/* Cuisine → pin color/glyph for the secondary MAP view. */
-const CUISINE_STYLE = [
-  [/biryani|indian|rice|thali|north|south|punjabi|maha|curry/i, '#B98A1F', '🍛'],
-  [/burger|fast|street|snack|sandwich/i, '#8E2F3C', '🍔'],
-  [/noodle|ramen|wok|chinese/i, '#1E6E5C', '🍜'],
-  [/pizza|italian|pasta|conti/i, '#5F6B76', '🍕'],
-  [/dessert|sweet|bakery|ice|cake/i, '#1C2430', '🍰'],
-  [/beverage|juice|cafe|coffee|tea|bar/i, '#2E9E9B', '🍹'],
-]
-function styleFor(cuisine = '') {
-  for (const [re, color, glyph] of CUISINE_STYLE) if (re.test(cuisine)) return { color, glyph }
-  return { color: '#757064', glyph: '🍽️' }
-}
-function hash(str) {
-  let h = 0
-  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0
-  return h
-}
-
 /**
  * Home. Two views behind the masthead tabs:
  *  - LEDGER (default): the City Ledger — server-paginated enriched rows,
  *    discussion-first hierarchy, Most Discussed default sort.
- *  - MAP: the full explorer map with pins synced to a simple index below.
+ *  - MAP: the Atlas — a real Leaflet map of the current slice, with a simple
+ *    index below.
  */
 export default function RestaurantListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -167,33 +151,6 @@ export default function RestaurantListPage() {
 
   const selectedCity = cityList.find((c) => c.citySlug === city) ?? cityList.find((c) => c.cityName === city)
 
-  const mapPins = useMemo(() => {
-    const lats = mapRows.map((r) => Number(r.latitude)).filter(Number.isFinite)
-    const lngs = mapRows.map((r) => Number(r.longitude)).filter(Number.isFinite)
-    const minLat = Math.min(...lats)
-    const maxLat = Math.max(...lats)
-    const minLng = Math.min(...lngs)
-    const maxLng = Math.max(...lngs)
-    const spread = (v, min, max) => {
-      if (!Number.isFinite(v)) return null
-      const t = max === min ? 0.5 : (v - min) / (max - min)
-      return 14 + t * 72
-    }
-    return mapRows.map((r) => {
-      const x = spread(Number(r.longitude), minLng, maxLng)
-      const y = spread(Number(r.latitude), minLat, maxLat)
-      const { color, glyph } = styleFor(r.cuisineType || (r.cuisines && r.cuisines[0]) || '')
-      return {
-        ...r,
-        x: x ?? 12 + (hash(r.id) % 76),
-        y: y ?? 14 + ((hash(r.id) >> 4) % 72),
-        color,
-        glyph,
-        featured: false,
-      }
-    })
-  }, [mapRows])
-
   const setPage = (nextPage) => {
     const next = new URLSearchParams(searchParams)
     nextPage > 0 ? next.set('page', String(nextPage)) : next.delete('page')
@@ -212,42 +169,17 @@ export default function RestaurantListPage() {
         </div>
 
         <div className="panel relative -rotate-[0.4deg] overflow-hidden p-0" style={{ minHeight: 320 }}>
-          <div className="map-streets pointer-events-none absolute inset-0 opacity-70 dark:opacity-40" aria-hidden="true" />
-          <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
-            {mapPins.length === 0 && !mapLoading && (
-              <div className="absolute inset-0 grid place-items-center px-6 text-center">
-                <p className="text-sm font-semibold text-muted">No restaurants to plot here yet.</p>
+          <Suspense
+            fallback={
+              <div className="grid place-items-center px-6 py-16 text-center" role="status" aria-label="Loading the map">
+                <p className="text-sm font-semibold text-muted">Unfolding the atlas…</p>
               </div>
-            )}
-            <div role="img" aria-label={`Map of restaurants in ${selectedCity?.cityName || 'your area'}`} className="h-full w-full">
-              {mapPins.map((pin, i) => (
-                <button
-                  key={pin.id}
-                  type="button"
-                  onMouseEnter={() => setHoveredId(pin.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                  onClick={() => setHoveredId(pin.id)}
-                  aria-label={`${pin.name}, rating ${Number(pin.avgRating).toFixed(1)}`}
-                  className="animate-pop-rotate absolute z-10 flex -translate-x-1/2 -translate-y-full flex-col items-center gap-1 transition-transform duration-200 hover:scale-110"
-                  style={{ left: `${pin.x}%`, top: `${pin.y}%`, animationDelay: `${Math.min(i, 8) * 50}ms` }}
-                >
-                  <span
-                    className={`grid h-10 w-10 rotate-45 place-items-center rounded-md border-[1.5px] border-ink transition-transform duration-200 ${
-                      hoveredId === pin.id ? 'scale-110' : ''
-                    }`}
-                    style={{ background: pin.color }}
-                  >
-                    <span className="-rotate-45 text-base">{pin.glyph}</span>
-                  </span>
-                  <span className="num border-[1.5px] border-hair bg-card px-1.5 py-0.5 text-[10px] font-bold text-ink">
-                    {Number(pin.avgRating).toFixed(1)}★
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+            }
+          >
+            <MapView rows={mapRows} loading={mapLoading} />
+          </Suspense>
           <div className="flex items-center gap-2 border-t border-hair bg-card px-3 py-2">
-            <span className="micro-label">{mapLoading ? 'Plotting…' : `${mapPins.length} plotted`}</span>
+            <span className="micro-label">{mapLoading ? 'Plotting…' : `${mapRows.length} plotted`}</span>
             <Link to="/" className="micro-label ml-auto normal-case tracking-normal hover:text-ink">
               ← back to the ledger
             </Link>

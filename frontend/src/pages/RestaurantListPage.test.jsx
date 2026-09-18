@@ -15,6 +15,8 @@ const rows = [
     citySlug: 'chennai',
     avgRating: 4.5,
     reviewCount: 2,
+    latitude: 13.0418,
+    longitude: 80.2341,
     rank: 3,
     tier: 'ELITE',
     commentCount: 12,
@@ -32,6 +34,8 @@ const rows = [
     citySlug: 'chennai',
     avgRating: 4.1,
     reviewCount: 1,
+    latitude: 13.0499,
+    longitude: 80.2824,
     rank: 7,
     tier: 'GREAT',
     commentCount: 3,
@@ -59,6 +63,13 @@ const { listLocalities } = vi.hoisted(() => ({ listLocalities: vi.fn() }))
 const setActiveLocation = vi.fn()
 
 vi.mock('../api/restaurants', () => ({ fetchLedger, listRestaurants, listCuisines }))
+vi.mock('react-leaflet', () => ({
+  MapContainer: ({ children }) => <div data-testid="leaflet-map">{children}</div>,
+  TileLayer: () => null,
+  CircleMarker: ({ children }) => <div data-testid="map-marker">{children}</div>,
+  Popup: ({ children }) => <div>{children}</div>,
+  useMap: () => ({ fitBounds: vi.fn(), flyTo: vi.fn() }),
+}))
 vi.mock('../api/locations', () => ({ listLocalities }))
 vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({ user: { id: 'u1', name: 'Alice' }, isAuthenticated: false }),
@@ -183,7 +194,9 @@ describe('RestaurantListPage — the City Ledger', () => {
 
   it('still serves the MAP secondary view from the full feed endpoint', async () => {
     renderAt('/?view=map')
-    await screen.findByLabelText(/Map of restaurants in Chennai/)
+    expect(await screen.findByTestId('atlas-map')).toBeInTheDocument()
+    expect(await screen.findByText('2 plotted')).toBeInTheDocument()
+    expect(screen.getAllByTestId('map-marker')).toHaveLength(2)
     expect(listRestaurants).toHaveBeenCalled()
     expect(fetchLedger).not.toHaveBeenCalled()
   })
