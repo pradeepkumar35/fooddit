@@ -62,13 +62,14 @@ const { fetchLedger, listRestaurants, listCuisines } = vi.hoisted(() => ({
 const { listLocalities } = vi.hoisted(() => ({ listLocalities: vi.fn() }))
 const setActiveLocation = vi.fn()
 
+const { mapFlyTo } = vi.hoisted(() => ({ mapFlyTo: vi.fn() }))
 vi.mock('../api/restaurants', () => ({ fetchLedger, listRestaurants, listCuisines }))
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="leaflet-map">{children}</div>,
   TileLayer: () => null,
   CircleMarker: ({ children }) => <div data-testid="map-marker">{children}</div>,
   Popup: ({ children }) => <div>{children}</div>,
-  useMap: () => ({ fitBounds: vi.fn(), flyTo: vi.fn() }),
+  useMap: () => ({ fitBounds: vi.fn(), flyTo: mapFlyTo, getZoom: () => 12 }),
 }))
 vi.mock('../api/locations', () => ({ listLocalities }))
 vi.mock('../hooks/useAuth', () => ({
@@ -102,6 +103,7 @@ describe('RestaurantListPage — the City Ledger', () => {
     listCuisines.mockReset().mockResolvedValue(['South Indian', 'Hyderabadi'])
     listLocalities.mockReset().mockResolvedValue([])
     setActiveLocation.mockReset()
+    mapFlyTo.mockClear()
   })
 
   it('renders enriched ledger rows with rank, tier seal and discussion co-headline', async () => {
@@ -199,5 +201,19 @@ describe('RestaurantListPage — the City Ledger', () => {
     expect(screen.getAllByTestId('map-marker')).toHaveLength(2)
     expect(listRestaurants).toHaveBeenCalled()
     expect(fetchLedger).not.toHaveBeenCalled()
+  })
+
+  it('flies the map to an index row when tapped, without leaving the Atlas', async () => {
+    renderAt('/?view=map')
+    await screen.findByTestId('atlas-map')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show Dosa Dynasty on the map' }))
+    expect(mapFlyTo).toHaveBeenCalledWith([13.0418, 80.2341], 15, expect.anything())
+
+    // Still on the Atlas, and the dossier stays one tap away.
+    expect(screen.getByTestId('atlas-map')).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Open the dossier for Dosa Dynasty' }),
+    ).toHaveAttribute('href', '/restaurants/r1')
   })
 })

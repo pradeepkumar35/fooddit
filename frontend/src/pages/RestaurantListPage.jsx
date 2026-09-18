@@ -59,6 +59,8 @@ export default function RestaurantListPage() {
   const [mapRows, setMapRows] = useState([])
   const [mapLoading, setMapLoading] = useState(true)
   const [hoveredId, setHoveredId] = useState(null)
+  // Restaurant the index focused on the map ({ id, n }; n retriggers a repeat tap).
+  const [mapSelected, setMapSelected] = useState(null)
 
   const [cuisineOptions, setCuisineOptions] = useState([])
 
@@ -157,6 +159,14 @@ export default function RestaurantListPage() {
     setSearchParams(next)
   }
 
+  // Index tap -> the Atlas flies to that pin and opens its popup. The map may
+  // be scrolled out of view, so bring it back before the flight lands.
+  const focusOnMap = (row) => {
+    setMapSelected((s) => ({ id: row.id, n: (s?.n ?? 0) + 1 }))
+    setHoveredId(row.id)
+    document.querySelector('[data-testid="atlas-map"]')?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' })
+  }
+
   /* ============================== MAP VIEW ============================== */
   if (view === 'map') {
     return (
@@ -176,7 +186,7 @@ export default function RestaurantListPage() {
               </div>
             }
           >
-            <MapView rows={mapRows} loading={mapLoading} />
+            <MapView rows={mapRows} loading={mapLoading} selected={mapSelected} />
           </Suspense>
           <div className="flex items-center gap-2 border-t border-hair bg-card px-3 py-2">
             <span className="micro-label">{mapLoading ? 'Plotting…' : `${mapRows.length} plotted`}</span>
@@ -186,22 +196,36 @@ export default function RestaurantListPage() {
           </div>
         </div>
 
-        {/* Docked index under the atlas */}
+        {/* Docked index under the atlas: a tap flies the map to that pin and
+            opens its popup; the dossier stays one tap away on the right. */}
         <div className="mt-6 grid gap-px border border-hair bg-hair">
           {mapRows.map((r) => (
-            <Link
+            <div
               key={r.id}
-              to={`/restaurants/${r.id}`}
               onMouseEnter={() => setHoveredId(r.id)}
               onMouseLeave={() => setHoveredId(null)}
-              className={`flex items-baseline gap-3 bg-paper px-4 py-3 transition-colors duration-150 hover:bg-card ${
-                hoveredId === r.id ? 'bg-card' : ''
+              className={`flex items-center gap-3 bg-paper px-4 py-3 transition-colors duration-150 hover:bg-card ${
+                hoveredId === r.id || mapSelected?.id === r.id ? 'bg-card' : ''
               }`}
             >
-              <span className="font-serif text-base font-semibold text-ink">{r.name}</span>
-              <span className="truncate text-xs text-muted">{[r.cuisineType, r.locality].filter(Boolean).join(' · ')}</span>
-              <span className="num ml-auto text-sm font-semibold text-ink">{Number(r.avgRating ?? 0).toFixed(1)}</span>
-            </Link>
+              <button
+                type="button"
+                onClick={() => focusOnMap(r)}
+                aria-label={`Show ${r.name} on the map`}
+                className="flex min-w-0 flex-1 items-baseline gap-3 text-left"
+              >
+                <span className="font-serif text-base font-semibold text-ink">{r.name}</span>
+                <span className="truncate text-xs text-muted">{[r.cuisineType, r.locality].filter(Boolean).join(' · ')}</span>
+                <span className="num ml-auto text-sm font-semibold text-ink">{Number(r.avgRating ?? 0).toFixed(1)}</span>
+              </button>
+              <Link
+                to={`/restaurants/${r.id}`}
+                aria-label={`Open the dossier for ${r.name}`}
+                className="micro-label shrink-0 normal-case tracking-normal hover:text-ink"
+              >
+                dossier →
+              </Link>
+            </div>
           ))}
         </div>
       </div>

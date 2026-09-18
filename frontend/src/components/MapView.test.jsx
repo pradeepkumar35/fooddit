@@ -1,6 +1,12 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const { mockFitBounds, mockFlyTo, mockGetZoom } = vi.hoisted(() => ({
+  mockFitBounds: vi.fn(),
+  mockFlyTo: vi.fn(),
+  mockGetZoom: vi.fn(() => 12),
+}))
 
 /* jsdom never builds a real Leaflet map: stub the react-leaflet surface and
    assert on the marker/popup contract instead. */
@@ -13,7 +19,7 @@ vi.mock('react-leaflet', () => ({
     </div>
   ),
   Popup: ({ children }) => <div>{children}</div>,
-  useMap: () => ({ fitBounds: vi.fn(), flyTo: vi.fn() }),
+  useMap: () => ({ fitBounds: mockFitBounds, flyTo: mockFlyTo, getZoom: mockGetZoom }),
 }))
 
 import MapView from './MapView'
@@ -51,6 +57,10 @@ const renderMap = (props = {}) =>
   )
 
 describe('MapView', () => {
+  beforeEach(() => {
+    mockFitBounds.mockClear()
+    mockFlyTo.mockClear()
+  })
   it('plots one marker per row that has coordinates', () => {
     renderMap()
     const markers = screen.getAllByTestId('map-marker')
@@ -77,5 +87,15 @@ describe('MapView', () => {
   it('hides the empty state while loading', () => {
     renderMap({ rows: [], loading: true })
     expect(screen.queryByText('No restaurants to plot here yet.')).not.toBeInTheDocument()
+  })
+
+  it('flies to the selected restaurant when the index picks one', () => {
+    renderMap({ selected: { id: 'r1', n: 1 } })
+    expect(mockFlyTo).toHaveBeenCalledWith([30.341, 78.006], 15, expect.anything())
+  })
+
+  it('ignores a selection that is not on the map', () => {
+    renderMap({ selected: { id: 'ghost', n: 1 } })
+    expect(mockFlyTo).not.toHaveBeenCalled()
   })
 })

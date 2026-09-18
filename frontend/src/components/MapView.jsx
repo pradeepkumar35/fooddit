@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -24,8 +24,9 @@ function validPoints(rows) {
     .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
 }
 
-/** Refits the viewport whenever a new result set arrives (city/filter change). */
-function FitBounds({ points, signature }) {
+/** Fits the viewport to each new result set, and flies to + opens the popup of
+ *  whichever restaurant the index below selects ({ id, n }; n retriggers). */
+function MapController({ points, signature, selected, markerRefs }) {
   const map = useMap()
   useEffect(() => {
     if (points.length === 0) return
@@ -47,6 +48,13 @@ function FitBounds({ points, signature }) {
       { padding: [28, 28], maxZoom: 15 },
     )
   }, [map, signature]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!selected) return
+    const target = points.find((p) => String(p.row.id) === String(selected.id))
+    if (!target) return
+    map.flyTo([target.lat, target.lng], Math.max(map.getZoom?.() ?? 12, 15), { duration: 0.8 })
+    markerRefs.current[selected.id]?.openPopup?.()
+  }, [map, selected, points, markerRefs])
   return null
 }
 
@@ -82,12 +90,14 @@ function LocateButton() {
  * The Atlas: a real interactive Leaflet map of the current result set.
  * Canvas-rendered rating-colored circles (cheap at ~2k pins), popups with the
  * dossier link, auto-fit on every new slice, light/dark tiles that follow the
- * app's Settings theme toggle.
+ * app's Settings theme toggle. `selected` ({ id, n }) flies to one restaurant
+ * and opens its popup — driven by the index below the map.
  */
-export default function MapView({ rows, loading }) {
+export default function MapView({ rows, loading, selected = null }) {
   const [dark, setDark] = useState(
     () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'),
   )
+  const markerRefs = useRef({})
 
   useEffect(() => {
     const el = document.documentElement
@@ -104,6 +114,7 @@ export default function MapView({ rows, loading }) {
     [points],
   )
   const center = points.length > 0 ? [points[0].lat, points[0].lng] : [22.97, 78.65]
+  const selectedId = selected?.id != null ? String(selected.id) : null
 
   return (
     <div className="relative" style={{ aspectRatio: '16/9', minHeight: 320 }} data-testid="atlas-map">
@@ -115,20 +126,25 @@ export default function MapView({ rows, loading }) {
         aria-label="Interactive map of restaurants"
       >
         <TileLayer url={dark ? DARK_TILES : LIGHT_TILES} attribution={ATTRIBUTION} maxZoom={19} />
-        <FitBounds points={points} signature={signature} />
+        <MapController points={points} signature={signature} selected={selected} markerRefs={markerRefs} />
         <LocateButton />
         {points.map(({ row, lat, lng }) => {
           const rating = Number(row.avgRating ?? 0)
           const reviews = Number(row.reviewCount ?? 0)
           const img = row.imageUrl || row.fallbackUrl
+          const isSelected = selectedId !== null && String(row.id) === selectedId
           return (
             <CircleMarker
               key={row.id}
+              ref={(m) => {
+                if (m) markerRefs.current[row.id] = m
+                else delete markerRefs.current[row.id]
+              }}
               center={[lat, lng]}
-              radius={reviews >= 20 ? 9 : reviews >= 5 ? 7 : 5}
+              radius={(reviews >= 20 ? 9 : reviews >= 5 ? 7 : 5) + (isSelected ? 3 : 0)}
               pathOptions={{
-                color: '#1C2430',
-                weight: 1.5,
+                color: isSelected ? '#8E2F3C' : '#1C2430',
+                weight: isSelected ? 3 : 1.5,
                 fillColor: colorFor(rating),
                 fillOpacity: 0.9,
               }}
