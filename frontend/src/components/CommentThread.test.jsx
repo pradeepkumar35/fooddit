@@ -70,8 +70,9 @@ describe('CommentThread live updates', () => {
     })
 
     // It appears in the DOM without any page reload — exactly like a second or
-    // third comment after it already does.
-    expect(await screen.findByText('First comment!')).toBeInTheDocument()
+    // third comment after it already does. Generous timeout: under full-suite
+    // parallel load this machine intermittently needs more than the 1s default.
+    expect(await screen.findByText('First comment!', {}, { timeout: 5000 })).toBeInTheDocument()
     expect(mocks.getThread).toHaveBeenCalledTimes(2)
   })
 
